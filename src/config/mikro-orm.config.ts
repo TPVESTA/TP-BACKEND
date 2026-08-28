@@ -1,6 +1,7 @@
 import { Options } from '@mikro-orm/core';
 import { MySqlDriver } from '@mikro-orm/mysql';
 import { User } from '../entities/User';
+import { Rol } from '../entities/Rol';
 
 const config: Options<MySqlDriver> = {
   driver: MySqlDriver,
@@ -12,7 +13,7 @@ const config: Options<MySqlDriver> = {
   charset: 'utf8mb4',
   debug: process.env.NODE_ENV !== 'production' && process.env.DB_DEBUG === 'true',
   allowGlobalContext: true,
-  entities: [User],
+  entities: [User, Rol],
   discovery: {
     warnWhenNoEntities: false,
   },

@@ -8,8 +8,11 @@ declare global {
     interface Request {
       user?: {
         id: number;
-        name: string;
+        nombre: string;
+        apellido: string;
         email: string;
+        fechaNacimiento: Date;
+        estado: boolean;
       };
     }
   }
@@ -49,8 +52,11 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     // Agregar el usuario a la request
     req.user = {
       id: user.id,
-      name: user.name,
-      email: user.email
+      nombre: user.nombre,
+      apellido: user.apellido,
+      email: user.email,
+      fechaNacimiento: user.fechaNacimiento,
+      estado: user.estado
     };
 
     next();
@@ -88,8 +94,11 @@ export const optionalAuthMiddleware = async (req: Request, res: Response, next: 
     if (user) {
       req.user = {
         id: user.id,
-        name: user.name,
-        email: user.email
+        nombre: user.nombre,
+        apellido: user.apellido,
+        email: user.email,
+        fechaNacimiento: user.fechaNacimiento,
+        estado: user.estado
       };
     }
 

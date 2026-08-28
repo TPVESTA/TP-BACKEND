@@ -9,16 +9,22 @@ interface LoginData {
 }
 
 interface RegisterData {
-  name: string;
+  nombre: string;
+  apellido: string;
   email: string;
+  fechaNacimiento: Date;
   password: string;
+  estado: boolean;
 }
 
 interface AuthResponse {
   user: {
     id: number;
-    name: string;
+    nombre: string;
+    apellido: string;
     email: string;
+    fechaNacimiento: Date;
+    estado: boolean;
   };
   token: string;
 }
@@ -88,7 +94,7 @@ export const register = async (userData: RegisterData): Promise<AuthResponse> =>
   const hashedPassword = await hashPassword(userData.password);
 
   // Crear nuevo usuario
-  const newUser = new User(userData.name, userData.email, hashedPassword);
+  const newUser = new User(userData.nombre, userData.apellido, userData.email, userData.fechaNacimiento, hashedPassword, userData.estado);
 
   // Asegurar que los timestamps estén establecidos
   newUser.createdAt = new Date();
@@ -103,8 +109,11 @@ export const register = async (userData: RegisterData): Promise<AuthResponse> =>
   return {
     user: {
       id: newUser.id,
-      name: newUser.name,
-      email: newUser.email
+      nombre: newUser.nombre,
+      apellido: newUser.apellido,
+      email: newUser.email,
+      fechaNacimiento: newUser.fechaNacimiento,
+      estado: newUser.estado
     },
     token
   };
@@ -138,8 +147,11 @@ export const login = async (loginData: LoginData): Promise<AuthResponse> => {
   return {
     user: {
       id: user.id,
-      name: user.name,
-      email: user.email
+      nombre: user.nombre,
+      apellido: user.apellido,
+      email: user.email,
+      fechaNacimiento: user.fechaNacimiento,
+      estado: user.estado
     },
     token
   };

@@ -3,15 +3,20 @@ import { User } from '../entities/User';
 import { hashPassword } from './auth.service';
 
 interface CreateUserData {
-  name: string;
+  nombre: string;
+  apellido: string;
   email: string;
+  fechaNacimiento: Date;
   password: string;
+  estado: boolean;
 }
 
 interface UpdateUserData {
-  name?: string;
+  nombre?: string;
+  apellido?: string;
   email?: string;
   password?: string;
+  estado?: boolean;
 }
 
 const dbManager = DatabaseManager.getInstance();
@@ -47,7 +52,7 @@ export const createUser = async (userData: CreateUserData): Promise<User> => {
   const hashedPassword = await hashPassword(userData.password);
 
   // Crear nuevo usuario
-  const newUser = new User(userData.name, userData.email, hashedPassword);
+  const newUser = new User(userData.nombre, userData.apellido, userData.email, userData.fechaNacimiento, hashedPassword, userData.estado);
 
   // Asegurar que los timestamps estén establecidos
   newUser.createdAt = new Date();
@@ -69,8 +74,8 @@ export const updateUser = async (id: string, userData: UpdateUserData): Promise<
   }
   
   // Actualizar los campos proporcionados
-  if (userData.name !== undefined) {
-    user.name = userData.name;
+  if (userData.nombre !== undefined) {
+    user.nombre = userData.nombre;
   }
   if (userData.email !== undefined) {
     // Verificar si el nuevo email ya existe (excepto el usuario actual)
