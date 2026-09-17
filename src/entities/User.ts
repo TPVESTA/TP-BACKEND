@@ -1,5 +1,6 @@
 import { Entity, PrimaryKey, Property, Filter, ManyToMany, Collection } from '@mikro-orm/core';
-import { Rol } from './Rol';  
+import { Rol } from './Rol';
+import { Administracion } from './Administracion';
 
 @Filter({ name: 'softDelete', cond: { deletedAt: null }, default: true })
 @Entity({ tableName: 'users' })
@@ -39,6 +40,9 @@ export class User {
 
   @ManyToMany(() => Rol, (rol) => rol.users, { owner: true, pivotTable: 'user_roles' })
   roles = new Collection<Rol>(this);
+
+  @ManyToMany(() => Administracion, (administracion) => administracion.usuarios)
+  administracion = new Collection<Administracion>(this);
 
   constructor(nombre: string, apellido: string, email: string, fechaNacimiento: Date, password: string, estado: boolean) {
     this.nombre = nombre;
