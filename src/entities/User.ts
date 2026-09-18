@@ -1,9 +1,11 @@
-import { Entity, PrimaryKey, Property, Filter, ManyToMany, Collection } from '@mikro-orm/core';
-import { Rol } from './Rol';
-import { Administracion } from './Administracion';
+import { Entity, PrimaryKey, Property, Filter, OneToMany, Collection } from '@mikro-orm/core';
+import { Empleado } from './Empleado';
+import { UsuarioRolPropiedad } from './UsuarioRolPropiedad';
+import { Incidencia } from './Incidencia';
+import { Reservacion } from './Reservacion';
 
 @Filter({ name: 'softDelete', cond: { deletedAt: null }, default: true })
-@Entity({ tableName: 'users' })
+@Entity({ tableName: 'user' })
 export class User {
   @PrimaryKey()
   id!: number;
@@ -32,17 +34,23 @@ export class User {
   @Property({ fieldName: 'updated_at', onUpdate: () => new Date() })
   updatedAt: Date = new Date();
 
-  @Property({ fieldName: 'deleted_at', nullable: true })
+  @Property({ fieldName: 'deleted_at', type: 'datetime', nullable: true })
   deletedAt: Date | null = null;
   
   @Property()
   estado!: boolean;
 
-  @ManyToMany(() => Rol, (rol) => rol.users, { owner: true, pivotTable: 'user_roles' })
-  roles = new Collection<Rol>(this);
+  @OneToMany(() => Empleado, empleado => empleado.usuario)
+  empleos = new Collection<Empleado>(this);
 
-  @ManyToMany(() => Administracion, (administracion) => administracion.usuarios)
-  administracion = new Collection<Administracion>(this);
+  @OneToMany(() => UsuarioRolPropiedad, asignacion => asignacion.usuario)
+  rolesPropiedad = new Collection<UsuarioRolPropiedad>(this);
+
+  @OneToMany(() => Incidencia, incidencia => incidencia.usuario)
+  incidencias = new Collection<Incidencia>(this);
+
+  @OneToMany(() => Reservacion, reservacion => reservacion.usuario)
+  reservaciones = new Collection<Reservacion>(this);
 
   constructor(nombre: string, apellido: string, email: string, fechaNacimiento: Date, password: string, estado: boolean) {
     this.nombre = nombre;

@@ -98,3 +98,8 @@ logs
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# Tests (temporarily ignored)
+/tests/
+
+/Entidades.md

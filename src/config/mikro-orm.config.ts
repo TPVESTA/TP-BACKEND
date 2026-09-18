@@ -5,6 +5,17 @@ import { Rol } from '../entities/Rol';
 import { Administracion } from '../entities/Administracion';
 import { Edificio } from '../entities/Edificio';
 
+import { Localidad } from '../entities/Localidad';
+import { TipoUnidad } from '../entities/TipoUnidad';
+import { Unidad } from '../entities/Unidad';
+import { Propiedad } from '../entities/Propiedad';
+import { AreaComun } from '../entities/AreaComun';
+import { Empleado } from '../entities/Empleado';
+import { AdminEdificio } from '../entities/AdminEdificio';
+import { UsuarioRolPropiedad } from '../entities/UsuarioRolPropiedad';
+import { Incidencia } from '../entities/Incidencia';
+import { Reservacion } from '../entities/Reservacion';
+
 const config: Options<MySqlDriver> = {
   driver: MySqlDriver,
   host: process.env.DB_HOST || 'localhost',
@@ -15,7 +26,7 @@ const config: Options<MySqlDriver> = {
   charset: 'utf8mb4',
   debug: process.env.NODE_ENV !== 'production' && process.env.DB_DEBUG === 'true',
   allowGlobalContext: true,
-  entities: [User, Rol, Administracion, Edificio],
+  entities: [User, Rol, Administracion, Edificio, Localidad, TipoUnidad, Unidad, Propiedad, AreaComun, Empleado, AdminEdificio, UsuarioRolPropiedad, Incidencia, Reservacion],
   discovery: {
     warnWhenNoEntities: false,
   },

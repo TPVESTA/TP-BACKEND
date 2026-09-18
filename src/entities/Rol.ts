@@ -1,19 +1,32 @@
-import { Entity, Property, PrimaryKey, ManyToMany, Collection } from "@mikro-orm/core";
-import { User } from "./User";
+import { Entity, Property, PrimaryKey, Enum, OneToMany, Collection, BeforeUpdate, EventArgs } from '@mikro-orm/core';
+import { AmbitoRol } from './AmbitoRol';
+import { Empleado } from './Empleado';
+import { UsuarioRolPropiedad } from './UsuarioRolPropiedad';
 
-@Entity({ tableName: "roles" })
+@Entity({ tableName: 'rol' })
 export class Rol {
+  @PrimaryKey()
+  id!: number;
 
-    @PrimaryKey()
-    id!: number;
+  @Property()
+  nombre!: string;
 
-    @Property()
-    nombre!: string;
+  @Property()
+  descripcion!: string;
 
-    @Property()
-    descripcion!: string;
+  @Enum(() => AmbitoRol)
+  ambito!: AmbitoRol;
 
-    @ManyToMany(() => User, (user) => user.roles)
-    users = new Collection<User>(this);
+  @OneToMany(() => Empleado, empleado => empleado.rol)
+  empleados = new Collection<Empleado>(this);
 
+  @OneToMany(() => UsuarioRolPropiedad, asignacion => asignacion.rol)
+  asignacionesPropiedad = new Collection<UsuarioRolPropiedad>(this);
+  @BeforeUpdate()
+  validarCambioAmbito({ changeSet }: EventArgs<Rol>): void {
+    // Cambiar el ambito invalidaria asignaciones existentes, incluso historicas.
+    if (changeSet && Object.prototype.hasOwnProperty.call(changeSet.payload, 'ambito')) {
+      throw new Error('El ambito de un rol existente no se puede cambiar; cree otro rol.');
+    }
+  }
 }

@@ -1,9 +1,9 @@
-import { Entity, PrimaryKey, Property, Filter, ManyToMany, Collection } from '@mikro-orm/core';
-import { User } from './User';
-import { Edificio } from './Edificio';
+import { Entity, PrimaryKey, Property, Filter, OneToMany, Collection } from '@mikro-orm/core';
+import { Empleado } from './Empleado';
+import { AdminEdificio } from './AdminEdificio';
 
-@Filter({ name: 'softDelete', cond: { deleteTimestamp: null }, default: true })
-@Entity({ tableName: 'administraciones' })
+@Filter({ name: 'softDelete', cond: { deletedAt: null }, default: true })
+@Entity({ tableName: 'administracion' })
 export class Administracion {
   @PrimaryKey()
   id!: number;
@@ -14,11 +14,11 @@ export class Administracion {
   @Property()
   nombre!: string;
 
-  @Property({ fieldName: 'creation_timestamp' })
-  creationTimestamp: Date = new Date();
+  @Property({ fieldName: 'created_at' })
+  createdAt: Date = new Date();
 
-  @Property({ fieldName: 'delete_timestamp', nullable: true })
-  deleteTimestamp: Date | null = null;
+  @Property({ fieldName: 'deleted_at', type: 'datetime', nullable: true })
+  deletedAt: Date | null = null;
 
   @Property()
   email!: string;
@@ -26,17 +26,17 @@ export class Administracion {
   @Property()
   direccion!: string;
 
-  @ManyToMany(() => User, (user) => user.administracion, { owner: true, pivotTable: 'empleado' })
-  usuarios = new Collection<User>(this);
+  @OneToMany(() => Empleado, empleado => empleado.administracion)
+  empleados = new Collection<Empleado>(this);
 
-  @ManyToMany(() => Edificio, (edificio) => edificio.administracion, { owner: true, pivotTable: 'admin_edificio' })
-  edificios = new Collection<Edificio>(this);
+  @OneToMany(() => AdminEdificio, gestion => gestion.administracion)
+  gestionesEdificios = new Collection<AdminEdificio>(this);
 
   constructor(cuit: string, nombre: string, email: string, direccion: string) {
     this.cuit = cuit;
     this.nombre = nombre;
     this.email = email;
     this.direccion = direccion;
-    this.creationTimestamp = new Date();
+    this.createdAt = new Date();
   }
 }

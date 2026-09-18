@@ -1,8 +1,10 @@
-import { Entity, PrimaryKey, Property, Filter, ManyToMany, Collection } from '@mikro-orm/core';
-import { Administracion } from './Administracion';
+import { Entity, PrimaryKey, Property, Filter, ManyToOne, OneToMany, Rel, Collection } from '@mikro-orm/core';
+import { AdminEdificio } from './AdminEdificio';
+import { Localidad } from './Localidad';
+import { Unidad } from './Unidad';
 
-@Filter({ name: 'softDelete', cond: { deleteTimestamp: null }, default: true })
-@Entity({ tableName: 'edificios' })
+@Filter({ name: 'softDelete', cond: { deletedAt: null }, default: true })
+@Entity({ tableName: 'edificio' })
 export class Edificio {
   @PrimaryKey()
   id!: number;
@@ -13,22 +15,28 @@ export class Edificio {
   @Property()
   nombre!: string;
 
-  @Property({ fieldName: 'creation_timestamp' })
-  creationTimestamp: Date = new Date();
+  @Property({ fieldName: 'created_at' })
+  createdAt: Date = new Date();
 
-  @Property({ fieldName: 'delete_timestamp', nullable: true })
-  deleteTimestamp: Date | null = null;
+  @Property({ fieldName: 'deleted_at', type: 'datetime', nullable: true })
+  deletedAt: Date | null = null;
 
   @Property()
   direccion!: string;
 
-  @ManyToMany(() => Administracion, (administracion) => administracion.edificios)
-  administracion = new Collection<Administracion>(this);
+  @ManyToOne(() => Localidad)
+  localidad!: Rel<Localidad>;
+
+  @OneToMany(() => Unidad, unidad => unidad.edificio)
+  unidades = new Collection<Unidad>(this);
+
+  @OneToMany(() => AdminEdificio, gestion => gestion.edificio)
+  administraciones = new Collection<AdminEdificio>(this);
 
   constructor(cuit: string, nombre: string, direccion: string) {
     this.cuit = cuit;
     this.nombre = nombre;
     this.direccion = direccion;
-    this.creationTimestamp = new Date();
+    this.createdAt = new Date();
   }
 }
