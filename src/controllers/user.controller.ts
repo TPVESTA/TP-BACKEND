@@ -34,8 +34,8 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
 // Controlador para crear un nuevo usuario
 export const createUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nombre, apellido, email, fechaNacimiento, password, estado } = req.body;
-    const newUser = await userService.createUser({ nombre, apellido, email, fechaNacimiento, password, estado });
+    const { cuil, nombre, apellido, email, fechaNacimiento, password, estado } = req.body;
+    const newUser = await userService.createUser({ cuil, nombre, apellido, email, fechaNacimiento, password, estado });
 
     ResponseHelper.created(res, newUser, 'Usuario creado exitosamente');
   } catch (error: any) {

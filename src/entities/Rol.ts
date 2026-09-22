@@ -1,3 +1,4 @@
+import { DomainValidationError } from '../errors/domain-validation.error';
 import { Entity, Property, PrimaryKey, Enum, OneToMany, Collection, BeforeUpdate, EventArgs } from '@mikro-orm/core';
 import { AmbitoRol } from './AmbitoRol';
 import { Empleado } from './Empleado';
@@ -26,7 +27,7 @@ export class Rol {
   validarCambioAmbito({ changeSet }: EventArgs<Rol>): void {
     // Cambiar el ambito invalidaria asignaciones existentes, incluso historicas.
     if (changeSet && Object.prototype.hasOwnProperty.call(changeSet.payload, 'ambito')) {
-      throw new Error('El ambito de un rol existente no se puede cambiar; cree otro rol.');
+      throw new DomainValidationError('El ambito de un rol existente no se puede cambiar; cree otro rol.');
     }
   }
 }

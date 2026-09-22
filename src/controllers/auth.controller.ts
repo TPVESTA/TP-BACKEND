@@ -1,36 +1,28 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { ResponseHelper } from '../helpers/response.helper';
 import * as authService from '../services/auth.service';
 
 // Controlador para registro de usuarios
-export const register = async (req: Request, res: Response): Promise<void> => {
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userData = req.body;
     const result = await authService.register(userData);
     
     ResponseHelper.created(res, result, 'Usuario registrado exitosamente');
   } catch (error) {
-    if (error instanceof Error) {
-      ResponseHelper.badRequest(res, error.message);
-    } else {
-      ResponseHelper.error(res, 'Error interno del servidor');
-    }
+    next(error);
   }
 };
 
 // Controlador para inicio de sesión
-export const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const loginData = req.body;
     const result = await authService.login(loginData);
     
     ResponseHelper.success(res, result, 'Inicio de sesión exitoso');
   } catch (error) {
-    if (error instanceof Error) {
-      ResponseHelper.unauthorized(res, error.message);
-    } else {
-      ResponseHelper.error(res, 'Error interno del servidor');
-    }
+    next(error);
   }
 };
 

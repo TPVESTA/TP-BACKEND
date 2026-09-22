@@ -2,6 +2,8 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import DatabaseManager from '../database/DatabaseManager';
 import { User } from '../entities/User';
+import { AuthenticationError } from '../errors/authentication.error';
+import { DomainValidationError } from '../errors/domain-validation.error';
 
 interface LoginData {
   email: string;
@@ -9,6 +11,7 @@ interface LoginData {
 }
 
 interface RegisterData {
+  cuil: string;
   nombre: string;
   apellido: string;
   email: string;
@@ -56,11 +59,20 @@ export const generateToken = (userId: number): string => {
 
 // Verificar un token JWT
 export const verifyToken = (token: string): { userId: number } => {
+  const secret = getJWTSecret();
   try {
-    const decoded = jwt.verify(token, getJWTSecret()) as { userId: number };
-    return decoded;
+    const decoded = jwt.verify(token, secret, { algorithms: ['HS256'] });
+    if (typeof decoded === 'string' || typeof decoded.userId !== 'number'
+      || !Number.isSafeInteger(decoded.userId) || decoded.userId <= 0
+      || typeof decoded.exp !== 'number') {
+      throw new AuthenticationError('Token inválido');
+    }
+    return { userId: decoded.userId };
   } catch (error) {
-    throw new Error('Token inválido');
+    if (error instanceof jwt.JsonWebTokenError || error instanceof AuthenticationError) {
+      throw new AuthenticationError('Token inválido o vencido');
+    }
+    throw error;
   }
 };
 
@@ -84,10 +96,10 @@ export const register = async (userData: RegisterData): Promise<AuthResponse> =>
   const existingUser = await em.findOne(User, { email: userData.email }, { filters: { softDelete: false } });
   if (existingUser) {
     if (existingUser.deletedAt !== null) {
-        throw new Error('El email ya está registrado en un usuario eliminado');
+        throw new DomainValidationError('El email ya está registrado en un usuario eliminado');
       }
     
-    throw new Error('El email ya está registrado');
+    throw new DomainValidationError('El email ya está registrado');
   }
 
   // Encriptar la contraseña
@@ -95,6 +107,7 @@ export const register = async (userData: RegisterData): Promise<AuthResponse> =>
 
   // Crear nuevo usuario
   const newUser = new User(userData.nombre, userData.apellido, userData.email, userData.fechaNacimiento, hashedPassword, userData.estado);
+  newUser.cuil = userData.cuil;
 
   // Asegurar que los timestamps estén establecidos
   newUser.createdAt = new Date();
@@ -123,7 +136,7 @@ export const register = async (userData: RegisterData): Promise<AuthResponse> =>
 export const login = async (loginData: LoginData): Promise<AuthResponse> => {
   // Validaciones básicas
   if (!loginData.email || !loginData.password) {
-    throw new Error('Email y contraseña son requeridos');
+    throw new AuthenticationError('Email y contraseña son requeridos');
   }
 
   const orm = dbManager.getORM();
@@ -131,14 +144,14 @@ export const login = async (loginData: LoginData): Promise<AuthResponse> => {
 
   // Buscar usuario por email
   const user = await em.findOne(User, { email: loginData.email });
-  if (!user) {
-    throw new Error('Credenciales inválidas');
+  if (!user || !user.estado || user.deletedAt != null) {
+    throw new AuthenticationError('Credenciales inválidas');
   }
 
   // Verificar contraseña
   const isPasswordValid = await comparePassword(loginData.password, user.password);
   if (!isPasswordValid) {
-    throw new Error('Credenciales inválidas');
+    throw new AuthenticationError('Credenciales inválidas');
   }
 
   // Generar token

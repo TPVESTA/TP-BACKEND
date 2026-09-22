@@ -12,10 +12,13 @@ router.post('/register', validate({ location: 'body', schema: registerUserSchema
 // POST /auth/login - Iniciar sesión
 router.post('/login', validate({ location: 'body', schema: loginUserSchema }), authController.login);
 
-// GET /auth/profile - Obtener perfil del usuario autenticado (requiere autenticación)
-router.get('/profile', authMiddleware, authController.getProfile);
+// Solo login y registro son públicos dentro de este router.
+router.use(authMiddleware);
+
+// GET /auth/profile - Obtener perfil del usuario autenticado
+router.get('/profile', authController.getProfile);
 
 // GET /auth/verify - Verificar si el token es válido (requiere autenticación)
-router.get('/verify', authMiddleware, authController.verifyToken);
+router.get('/verify', authController.verifyToken);
 
 export default router;

@@ -1,3 +1,4 @@
+import { DomainValidationError } from '../errors/domain-validation.error';
 import { Entity, Property, OneToMany, Collection, BeforeCreate, BeforeUpdate } from '@mikro-orm/core';
 import { Unidad } from './Unidad';
 import { UsuarioRolPropiedad } from './UsuarioRolPropiedad';
@@ -17,7 +18,7 @@ export class Propiedad extends Unidad {
   @BeforeUpdate()
   validarCopropiedad(): void {
     if (!Number.isFinite(this.copropiedad) || this.copropiedad < 0 || this.copropiedad > 100) {
-      throw new Error('La copropiedad debe ser un porcentaje entre 0 y 100.');
+      throw new DomainValidationError('La copropiedad debe ser un porcentaje entre 0 y 100.');
     }
   }
 }
