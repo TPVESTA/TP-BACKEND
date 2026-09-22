@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, getUserByIdForAuth } from '../services/auth.service';
-import { ResponseHelper } from '../helpers/response.helper';
+import { AuthenticationError } from '../errors/authentication.error';
 
-// Extender la interfaz Request para incluir el usuario autenticado
 declare global {
   namespace Express {
     interface Request {
@@ -18,93 +17,35 @@ declare global {
   }
 }
 
-// Middleware de autenticación
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  delete req.user;
   try {
-    // Obtener el token del header Authorization
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader) {
-      ResponseHelper.unauthorized(res, 'Token de acceso requerido');
-      return;
+    const header = req.headers.authorization;
+    if (!header) throw new AuthenticationError('Token de acceso requerido');
+    const match = /^Bearer[ \t]+(\S+)$/i.exec(header);
+    if (!match) throw new AuthenticationError('Formato de token inválido. Use: Bearer <token>');
+    const { userId } = verifyToken(match[1]);
+    const user = await getUserByIdForAuth(userId);
+    if (!user || user.deletedAt != null || !user.estado) {
+      throw new AuthenticationError('Usuario inexistente o deshabilitado');
     }
-
-    // Verificar formato Bearer token
-    const tokenParts = authHeader.split(' ');
-    if (tokenParts.length !== 2 || tokenParts[0] !== 'Bearer') {
-      ResponseHelper.unauthorized(res, 'Formato de token inválido. Use: Bearer <token>');
-      return;
-    }
-
-    const token = tokenParts[1];
-
-    // Verificar el token
-    const decoded = verifyToken(token);
-    
-    // Obtener los datos del usuario
-    const user = await getUserByIdForAuth(decoded.userId);
-    
-    if (!user) {
-      ResponseHelper.unauthorized(res, 'Usuario no encontrado');
-      return;
-    }
-
-    // Agregar el usuario a la request
     req.user = {
-      id: user.id,
-      nombre: user.nombre,
-      apellido: user.apellido,
-      email: user.email,
-      fechaNacimiento: user.fechaNacimiento,
-      estado: user.estado
+      id: user.id, nombre: user.nombre, apellido: user.apellido,
+      email: user.email, fechaNacimiento: user.fechaNacimiento, estado: user.estado
     };
-
-    next();
-  } catch (error) {
-    if (error instanceof Error) {
-      ResponseHelper.unauthorized(res, error.message);
-    } else {
-      ResponseHelper.unauthorized(res, 'Token inválido');
-    }
+  } catch (error: unknown) {
+    next(error);
+    return;
   }
+  next();
 };
 
-// Middleware opcional de autenticación (no bloquea si no hay token)
+// Opcional significa que se permite omitir el token. Si se presenta, debe ser válido.
 export const optionalAuthMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader) {
-      // Si no hay token, continúa sin usuario
-      next();
-      return;
-    }
-
-    const tokenParts = authHeader.split(' ');
-    if (tokenParts.length !== 2 || tokenParts[0] !== 'Bearer') {
-      // Si el formato es inválido, continúa sin usuario
-      next();
-      return;
-    }
-
-    const token = tokenParts[1];
-    const decoded = verifyToken(token);
-    const user = await getUserByIdForAuth(decoded.userId);
-    
-    if (user) {
-      req.user = {
-        id: user.id,
-        nombre: user.nombre,
-        apellido: user.apellido,
-        email: user.email,
-        fechaNacimiento: user.fechaNacimiento,
-        estado: user.estado
-      };
-    }
-
+  if (req.headers.authorization === undefined) {
+    delete req.user;
     next();
-  } catch (error) {
-    // En caso de error, continúa sin usuario
-    next();
+    return;
   }
+  await authMiddleware(req, res, next);
 };

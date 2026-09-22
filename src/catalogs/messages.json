@@ -6,11 +6,31 @@
       "login": "POST /api/auth/login",
       "profile": "GET /api/auth/profile (requiere token)",
       "verifyToken": "GET /api/auth/verify (requiere token)",
-      "users": "GET /api/users",
-      "user": "GET /api/users/:id",
+      "users": "GET /api/users (requiere token)",
+      "user": "GET /api/users/:id (requiere token)",
       "createUser": "POST /api/users (requiere token)",
       "updateUser": "PUT /api/users/:id (requiere token)",
       "deleteUser": "DELETE /api/users/:id (requiere token)"
+    },
+    "crud": {
+      "authentication": "Authorization: Bearer <token>",
+      "operations": ["GET /", "GET /:id", "POST /", "PUT /:id", "DELETE /:id"],
+      "resources": [
+        "/api/users",
+        "/api/administraciones",
+        "/api/edificios",
+        "/api/localidades",
+        "/api/tipos-unidad",
+        "/api/unidades",
+        "/api/propiedades",
+        "/api/areas-comunes",
+        "/api/roles",
+        "/api/empleados",
+        "/api/admin-edificios",
+        "/api/usuarios-roles-propiedad",
+        "/api/incidencias",
+        "/api/reservaciones"
+      ]
     }
   }
 }

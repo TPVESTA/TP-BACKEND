@@ -1,34 +1,38 @@
 import { Request, Response, NextFunction } from 'express';
-import Joi, { Schema, ValidationError } from 'joi';
+import Joi, { Schema } from 'joi';
 
-// Tipo de ubicación a validar
 type Location = 'body' | 'params' | 'query';
-
 interface ValidateOptions {
-  location?: Location; // por defecto 'body'
+  location?: Location;
   schema: Schema;
-  abortEarly?: boolean; // por defecto false
-  stripUnknown?: boolean; // por defecto true
+  abortEarly?: boolean;
+  stripUnknown?: boolean;
 }
 
 export function validate({ location = 'body', schema, abortEarly = false, stripUnknown = true }: ValidateOptions) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = req[location as keyof Request];
-      const value = await schema.validateAsync(data, { abortEarly, stripUnknown });
-
-      // Reemplazo con la versión sanitizada
-      // @ts-ignore - index signature para Request
-      req[location] = value;
-      next();
-    } catch (err) {
-      const error = err as ValidationError;
-      const details = error?.details?.map(d => d.message.replace(/"/g, '')) || ['Datos inválidos'];
+      const value = await schema.validateAsync(req[location], { abortEarly, stripUnknown });
+      // Express 5 expone query como getter sin setter. Se guarda el resultado
+      // validado en una propiedad propia para que los handlers reciban conversiones.
+      if (location === 'query') {
+        Object.defineProperty(req, 'query', {
+          value, writable: true, enumerable: true, configurable: true
+        });
+      } else {
+        req[location] = value;
+      }
+    } catch (error: unknown) {
+      if (!Joi.isError(error)) {
+        next(error);
+        return;
+      }
+      const details = error.details.map(detail => detail.message.replace(/"/g, ''));
       res.status(400).json({
-        success: false,
-        error: details[0],
-        errors: details
+        success: false, error: details[0] || 'Datos inválidos', errors: details
       });
+      return;
     }
+    next();
   };
 }

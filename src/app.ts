@@ -7,6 +7,7 @@ import { RequestContext } from '@mikro-orm/core';
 import DatabaseManager from './database/DatabaseManager';
 import routes from './routes';
 import messages from './catalogs/messages.json';
+import { errorMiddleware, notFoundMiddleware } from './middlewares/error.middleware';
 
 const app: express.Application = express();
 const dbManager = DatabaseManager.getInstance();
@@ -28,10 +29,6 @@ app.use(logger);
 app.get('/', (req: Request, res: Response) => {
   res.json(messages.welcomeMessage);
 });
-
-// ✅ Configurar rutas INMEDIATAMENTE (antes de la BD)
-app.use('/api', routes);
-
 const PORT = 3000;
 
 // Función para inicializar la aplicación
@@ -40,12 +37,14 @@ const initializeApp = async (): Promise<void> => {
     // Inicializar la base de datos
     const orm = await dbManager.initialize();
     
-    // ✅ Insertar el middleware de RequestContext ANTES de las rutas existentes
+    // El contexto debe registrarse antes de las rutas.
     app.use((req: Request, res: Response, next: NextFunction) => {
       RequestContext.create(orm.em, next);
     });
     
-    // Las rutas ya están configuradas arriba, pero ahora tendrán acceso al RequestContext
+    app.use('/api', routes);
+    app.use(notFoundMiddleware);
+    app.use(errorMiddleware);
     
     // Iniciar el servidor
     app.listen(PORT, () => {

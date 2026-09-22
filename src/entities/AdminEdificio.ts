@@ -1,3 +1,4 @@
+import { DomainValidationError } from '../errors/domain-validation.error';
 import { Entity, PrimaryKey, Property, ManyToOne, Rel, BeforeCreate, BeforeUpdate } from '@mikro-orm/core';
 import { Administracion } from './Administracion';
 import { Edificio } from './Edificio';
@@ -22,7 +23,7 @@ export class AdminEdificio {
   @BeforeUpdate()
   async validar(): Promise<void> {
     if (this.endAt !== null && this.endAt < this.beginAt) {
-      throw new Error('La fecha de fin no puede ser anterior a la fecha de inicio.');
+      throw new DomainValidationError('La fecha de fin no puede ser anterior a la fecha de inicio.');
     }
   }
 }

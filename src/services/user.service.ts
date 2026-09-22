@@ -1,8 +1,11 @@
+import { DomainValidationError } from '../errors/domain-validation.error';
 import DatabaseManager from '../database/DatabaseManager';
 import { User } from '../entities/User';
 import { hashPassword } from './auth.service';
+import { EntityId, parseId } from './service.helper';
 
-interface CreateUserData {
+export interface CreateUserData {
+  cuil: string;
   nombre: string;
   apellido: string;
   email: string;
@@ -11,7 +14,9 @@ interface CreateUserData {
   estado: boolean;
 }
 
-interface UpdateUserData {
+export interface UpdateUserData {
+  cuil?: string;
+  fechaNacimiento?: Date;
   nombre?: string;
   apellido?: string;
   email?: string;
@@ -28,10 +33,10 @@ export const getAllUsers = async (): Promise<User[]> => {
   return await em.find(User, {});
 };
 
-export const getUserById = async (id: string): Promise<User | null> => {
+export const getUserById = async (id: EntityId): Promise<User | null> => {
   const orm = dbManager.getORM();
   const em = orm.em.fork();
-  return await em.findOne(User, { id: parseInt(id) });
+  return await em.findOne(User, { id: parseId(id) });
 };
 
 export const createUser = async (userData: CreateUserData): Promise<User> => {
@@ -42,10 +47,10 @@ export const createUser = async (userData: CreateUserData): Promise<User> => {
   
   if (existingUser) {
     if (existingUser.deletedAt !== null) {
-      throw new Error("El email ya está registrado en un usuario eliminado");
+      throw new DomainValidationError("El email ya está registrado en un usuario eliminado");
     }
 
-    throw new Error("El email ya está registrado");
+    throw new DomainValidationError("El email ya está registrado");
   }
 
   // Encriptar la contraseña
@@ -53,6 +58,7 @@ export const createUser = async (userData: CreateUserData): Promise<User> => {
 
   // Crear nuevo usuario
   const newUser = new User(userData.nombre, userData.apellido, userData.email, userData.fechaNacimiento, hashedPassword, userData.estado);
+  newUser.cuil = userData.cuil;
 
   // Asegurar que los timestamps estén establecidos
   newUser.createdAt = new Date();
@@ -64,29 +70,33 @@ export const createUser = async (userData: CreateUserData): Promise<User> => {
   return newUser;
 };
 
-export const updateUser = async (id: string, userData: UpdateUserData): Promise<User | null> => {
+export const updateUser = async (id: EntityId, userData: UpdateUserData): Promise<User | null> => {
   const orm = dbManager.getORM();
   const em = orm.em.fork();
   
-  const user = await em.findOne(User, { id: parseInt(id) });
+  const user = await em.findOne(User, { id: parseId(id) });
   if (!user) {
     return null;
   }
   
   // Actualizar los campos proporcionados
+  if (userData.cuil !== undefined) user.cuil = userData.cuil;
+  if (userData.apellido !== undefined) user.apellido = userData.apellido;
+  if (userData.fechaNacimiento !== undefined) user.fechaNacimiento = userData.fechaNacimiento;
+  if (userData.estado !== undefined) user.estado = userData.estado;
   if (userData.nombre !== undefined) {
     user.nombre = userData.nombre;
   }
   if (userData.email !== undefined) {
     // Verificar si el nuevo email ya existe (excepto el usuario actual)
-    const existingUser = await em.findOne(User, { email: userData.email, id: { $ne: parseInt(id) } }, { filters: { softDelete: false } });
+    const existingUser = await em.findOne(User, { email: userData.email, id: { $ne: parseId(id) } }, { filters: { softDelete: false } });
     
     if (existingUser) {
       if (existingUser.deletedAt !== null) {
-        throw new Error('El email ya está registrado en un usuario eliminado');
+        throw new DomainValidationError('El email ya está registrado en un usuario eliminado');
       }
 
-      throw new Error('El email ya está registrado');
+      throw new DomainValidationError('El email ya está registrado');
     }
     
     user.email = userData.email;
@@ -104,18 +114,18 @@ export const updateUser = async (id: string, userData: UpdateUserData): Promise<
   return user;
 };
 
-export const deleteUser = async (id: string): Promise<User | null> => {
+export const deleteUser = async (id: EntityId): Promise<User | null> => {
   const orm = dbManager.getORM();
   const em = orm.em.fork();
   
   // Incluir también los borrados para poder retornar 404 si no existe en absoluto
-  const user = await em.findOne(User, { id: parseInt(id) }, { filters: { softDelete: false } });
+  const user = await em.findOne(User, { id: parseId(id) }, { filters: { softDelete: false } });
   if (!user) {
     return null;
   }
   
   // Borrado lógico
-  user.deletedAt = new Date();
+  user.deletedAt = user.deletedAt ?? new Date();
   user.updatedAt = new Date();
   await em.persistAndFlush(user);
   return user;

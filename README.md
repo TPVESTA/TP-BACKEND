@@ -1,5 +1,8 @@
 # API Express Demo - UTN (TypeScript)
 
+> La referencia actual de endpoints, autenticacion y ejemplos esta en [RUTAS.md](RUTAS.md).
+> Las rutas CRUD usan el prefijo `/api` y requieren token. Algunos ejemplos historicos de este README describen la version inicial.
+
 Este proyecto es una demostración de cómo crear una API REST con Node.js, Express, TypeScript y MikroORM con persistencia en MySQL.
 
 ## 🚀 Características
