@@ -101,6 +101,7 @@ Desktop.ini
 
 # Keep local tests ignored except for the service regression suite.
 /tests/*
+!/tests/ambito-unidad.test.cjs
 
 
 /Entidades.md

@@ -1,3 +1,5 @@
+import { AmbitoUnidad } from '../entities/AmbitoUnidad';
+import { requireAmbitoUnidad } from './ambito-unidad.helper';
 import { AreaComun } from '../entities/AreaComun';
 import { Edificio } from '../entities/Edificio';
 import { TipoUnidad } from '../entities/TipoUnidad';
@@ -33,6 +35,7 @@ export const createAreaComun = async (data: CreateAreaComunData): Promise<AreaCo
   entity.capacidad = data.capacidad;
   entity.edificio = await requireEntity(em, Edificio, data.edificioId, 'Edificio');
   entity.tipoUnidad = await requireEntity(em, TipoUnidad, data.tipoUnidadId, 'TipoUnidad');
+  requireAmbitoUnidad(entity.tipoUnidad, AmbitoUnidad.COMUN);
   await em.persistAndFlush(entity);
   return entity;
 };
@@ -46,7 +49,10 @@ export const updateAreaComun = async (id: EntityId, data: UpdateAreaComunData): 
   if (data.descripcion !== undefined) entity.descripcion = data.descripcion;
   if (data.capacidad !== undefined) entity.capacidad = data.capacidad;
   if (data.edificioId !== undefined) entity.edificio = await requireEntity(em, Edificio, data.edificioId, 'Edificio');
-  if (data.tipoUnidadId !== undefined) entity.tipoUnidad = await requireEntity(em, TipoUnidad, data.tipoUnidadId, 'TipoUnidad');
+  if (data.tipoUnidadId !== undefined) {
+    entity.tipoUnidad = await requireEntity(em, TipoUnidad, data.tipoUnidadId, 'TipoUnidad');
+    requireAmbitoUnidad(entity.tipoUnidad, AmbitoUnidad.COMUN);
+  }
   await em.persistAndFlush(entity);
   return entity;
 };

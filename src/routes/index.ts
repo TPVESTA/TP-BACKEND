@@ -16,6 +16,8 @@ import incidenciaRoutes from './incidencia.routes';
 import reservacionRoutes from './reservacion.routes';
 import { authMiddleware } from '../middlewares/auth.middleware';
 
+import usuarioRolRoutes from './usuario-rol.routes';
+
 const router: express.Router = express.Router();
 
 // Configurar todas las rutas de la aplicación
@@ -23,6 +25,7 @@ router.use('/auth', authRoutes);
 // Montar todas las rutas de negocio después de esta protección.
 router.use(authMiddleware);
 router.use('/users', userRoutes);
+router.use('/usuarios-roles', usuarioRolRoutes);
 router.use('/administraciones', administracionRoutes);
 router.use('/edificios', edificioRoutes);
 router.use('/localidades', localidadRoutes);

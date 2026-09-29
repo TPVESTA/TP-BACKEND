@@ -9,7 +9,7 @@ const { AmbitoRol } = require('../src/entities/AmbitoRol');
 const { parseId } = require('../src/services/service.helper');
 const specs = [
   {"file":"localidad","name":"Localidad","plural":"Localidades","fields":{"nombre":"string","provincia":"string"}},
-  {"file":"tipo-unidad","name":"TipoUnidad","plural":"TiposUnidad","fields":{"nombre":"string"}},
+  {"file":"tipo-unidad","name":"TipoUnidad","plural":"TiposUnidad","fields":{"nombre":"string","ambito":"AmbitoUnidad"}},
   {"file":"rol","name":"Rol","plural":"Roles","fields":{"nombre":"string","descripcion":"string","ambito":"AmbitoRol"}},
   {"file":"administracion","name":"Administracion","plural":"Administraciones","fields":{"cuit":"string","nombre":"string","email":"string","direccion":"string"},"soft":true},
   {"file":"edificio","name":"Edificio","plural":"Edificios","fields":{"cuit":"string","nombre":"string","direccion":"string"},"rels":{"localidad":"Localidad"},"soft":true},
@@ -73,7 +73,7 @@ function fixture(spec, state) {
   for (const [raw, type] of Object.entries(spec.fields)) {
     const field = raw.replace('?', '');
     data[field] = type === 'number' ? 10
-      : type === 'AmbitoRol' ? AmbitoRol.ADMINISTRACION
+      : type === 'AmbitoUnidad' ? 'PRIVADO' : type === 'AmbitoRol' ? AmbitoRol.ADMINISTRACION
       : type === 'Date' ? new Date('2026-01-01')
       : type === 'Date | null' ? null : 'Prueba';
   }
@@ -82,6 +82,7 @@ function fixture(spec, state) {
       ? require('../src/entities/Propiedad').Propiedad
       : require('../src/entities/' + name)[name];
     const related = state.put(new Entity());
+    if (name === 'TipoUnidad') related.ambito = spec.name === 'AreaComun' ? 'COMUN' : 'PRIVADO';
     if (name === 'Rol') related.ambito = spec.name === 'Empleado' ? AmbitoRol.ADMINISTRACION : AmbitoRol.PROPIEDAD;
     if (name === 'Unidad') state.records.set('Unidad:1', related);
     data[field + 'Id'] = '1';

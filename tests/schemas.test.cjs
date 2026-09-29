@@ -18,6 +18,7 @@ const specs = [
     "file": "tipo-unidad",
     "name": "TipoUnidad",
     "fields": [
+      "ambito",
       "nombre"
     ]
   },
@@ -130,7 +131,7 @@ const samples = {
 };
 function dataFor(spec) {
   const fields = [...(spec.kind === 'unidad' ? ['nroUnidad','mtCuadrados','descripcion','edificioId','tipoUnidadId'] : []), ...spec.fields];
-  return Object.fromEntries(fields.map(key => [key, key.endsWith('Id') ? '1' : samples[key]]));
+  return Object.fromEntries(fields.map(key => [key, key.endsWith('Id') ? '1' : key === 'ambito' && spec.name === 'TipoUnidad' ? 'PRIVADO' : samples[key]]));
 }
 for (const spec of specs) {
   const module = require('../src/schemas/' + spec.file + '.schema');

@@ -13,7 +13,7 @@ const fixtures = {
   Administracion: { cuit: '30123456789', nombre: 'Admin', email: 'admin@example.com', direccion: 'Calle 1' },
   Edificio: { cuit: '30123456789', nombre: 'Edificio', direccion: 'Calle 1', localidadId: '1' },
   Localidad: { nombre: 'Rosario', provincia: 'Santa Fe' },
-  TipoUnidad: { nombre: 'Departamento' },
+  TipoUnidad: { nombre: 'Departamento', ambito: 'PRIVADO' },
   Unidad: { ...unit, clase: 'propiedad', copropiedad: 10, habitaciones: 2 },
   Propiedad: { ...unit, copropiedad: 10, habitaciones: 2 },
   AreaComun: { ...unit, capacidad: 10 },
