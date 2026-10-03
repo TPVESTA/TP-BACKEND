@@ -21,8 +21,8 @@ const fixtures = {
   Empleado: { usuarioId: '1', administracionId: '2', rolId: '3', beginAt: '2026-01-01' },
   AdminEdificio: { administracionId: '1', edificioId: '2', beginAt: '2026-01-01' },
   UsuarioRolPropiedad: { usuarioId: '1', rolId: '2', propiedadId: '3', endAt: null },
-  Incidencia: { estado: 'abierta', descripcion: 'Reparar', usuarioId: '1', unidadId: '2', closedAt: null },
-  Reservacion: { fechaReservacion: '2026-10-01T12:00:00Z', estado: 'pendiente', descripcion: 'Reserva', usuarioId: '1', areaComunId: '2' }
+  Incidencia: { descripcion: 'Reparar', usuarioId: '1', unidadId: '2' },
+  Reservacion: { fechaReservacion: '2099-10-01T12:00:00-03:00', descripcion: 'Reserva', usuarioId: '1', areaComunId: '2' }
 };
 let server, base, token, oldSecret, originalLookup;
 const calls = [];
@@ -87,7 +87,7 @@ for (const [file, name, plural, path] of specs) {
       assert.equal(call.method, operation);
       if (url.endsWith('/1')) assert.equal(call.args[0], '1');
       if (body) {
-        const passed = call.args.at(-1);
+        const passed = ['Incidencia', 'Reservacion'].includes(name) && method === 'PUT' ? call.args[1] : call.args.at(-1);
         assert.equal(passed.intruso, undefined);
         for (const key of Object.keys(body)) {
           if (key.endsWith('Id')) assert.equal(typeof passed[key], 'number');

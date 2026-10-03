@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import type {} from '../middlewares/auth.middleware';
 import * as service from '../services/incidencia.service';
 import { ResponseHelper } from '../helpers/response.helper';
 import { handleControllerError, requireObjectBody } from '../helpers/controller.helper';
@@ -40,7 +41,9 @@ export const createIncidencia = async (req: Request, res: Response): Promise<voi
 export const updateIncidencia = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.updateIncidencia(String(req.params.id), req.body);
+    const result = req.user
+      ? await service.updateIncidencia(String(req.params.id), req.body, req.user.id)
+      : await service.updateIncidencia(String(req.params.id), req.body);
     if (!result) {
       ResponseHelper.notFound(res, 'Incidencia no encontrada');
       return;
@@ -63,4 +66,3 @@ export const deleteIncidencia = async (req: Request, res: Response): Promise<voi
     handleControllerError(res, error, 'deleteIncidencia');
   }
 };
-

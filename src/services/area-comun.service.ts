@@ -9,7 +9,7 @@ export interface CreateAreaComunData {
   nroUnidad: string;
   mtCuadrados: number;
   descripcion: string;
-  capacidad: number;
+  capacidad?: number | null;
   edificioId: EntityId;
   tipoUnidadId: EntityId;
 }
@@ -32,7 +32,7 @@ export const createAreaComun = async (data: CreateAreaComunData): Promise<AreaCo
   entity.nroUnidad = data.nroUnidad;
   entity.mtCuadrados = data.mtCuadrados;
   entity.descripcion = data.descripcion;
-  entity.capacidad = data.capacidad;
+  entity.capacidad = data.capacidad === 0 ? null : data.capacidad ?? null;
   entity.edificio = await requireEntity(em, Edificio, data.edificioId, 'Edificio');
   entity.tipoUnidad = await requireEntity(em, TipoUnidad, data.tipoUnidadId, 'TipoUnidad');
   requireAmbitoUnidad(entity.tipoUnidad, AmbitoUnidad.COMUN);
@@ -47,7 +47,7 @@ export const updateAreaComun = async (id: EntityId, data: UpdateAreaComunData): 
   if (data.nroUnidad !== undefined) entity.nroUnidad = data.nroUnidad;
   if (data.mtCuadrados !== undefined) entity.mtCuadrados = data.mtCuadrados;
   if (data.descripcion !== undefined) entity.descripcion = data.descripcion;
-  if (data.capacidad !== undefined) entity.capacidad = data.capacidad;
+  if (data.capacidad !== undefined) entity.capacidad = data.capacidad === 0 ? null : data.capacidad;
   if (data.edificioId !== undefined) entity.edificio = await requireEntity(em, Edificio, data.edificioId, 'Edificio');
   if (data.tipoUnidadId !== undefined) {
     entity.tipoUnidad = await requireEntity(em, TipoUnidad, data.tipoUnidadId, 'TipoUnidad');

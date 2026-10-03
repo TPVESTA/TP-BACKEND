@@ -63,6 +63,7 @@ const specs = [
   {
     "file": "area-comun",
     "name": "AreaComun",
+    "optionalFields": ["capacidad"],
     "fields": [
       "capacidad"
     ],
@@ -101,9 +102,7 @@ const specs = [
     "file": "incidencia",
     "name": "Incidencia",
     "fields": [
-      "estado",
       "descripcion",
-      "closedAt",
       "usuarioId",
       "unidadId"
     ]
@@ -113,7 +112,6 @@ const specs = [
     "name": "Reservacion",
     "fields": [
       "fechaReservacion",
-      "estado",
       "descripcion",
       "usuarioId",
       "areaComunId"
@@ -144,15 +142,20 @@ for (const spec of specs) {
     for (const key of Object.keys(data)) {
       if (key.endsWith('Id')) assert.equal(result.value[key], 1);
       if (key === 'fechaReservacion') assert.ok(result.value[key] instanceof Date);
-      if (key === 'closedAt') continue;
       const missing = { ...data };
       delete missing[key];
-      assert.ok(create.validate(missing, options).error, key + ' debe ser obligatorio');
+      const missingResult = create.validate(missing, options);
+      if ((spec.optionalFields ?? []).includes(key)) {
+        assert.ifError(missingResult.error);
+      } else {
+        assert.ok(missingResult.error, key + ' debe ser obligatorio');
+      }
     }
     for (const body of [undefined, null, [], 'texto']) assert.ok(create.validate(body, options).error);
   });
   test(spec.name + ': actualizacion parcial sin valores por defecto ni campos desconocidos', () => {
     for (const [key, value] of Object.entries(dataFor(spec))) {
+      if (spec.name === 'Reservacion' && key === 'usuarioId') continue;
       const result = update.validate({ [key]: value }, options);
       assert.ifError(result.error);
       assert.deepEqual(Object.keys(result.value), [key]);
@@ -160,7 +163,7 @@ for (const spec of specs) {
     for (const body of [undefined, null, [], {}, { id: 100, createdAt: samples.beginAt, inventado: true }]) {
       assert.ok(update.validate(body, options).error);
     }
-    const result = update.validate({ ...dataFor(spec), id: 100, deletedAt: samples.beginAt }, options);
+    const result = update.validate({ ...Object.fromEntries(Object.entries(dataFor(spec)).filter(([key]) => spec.name !== 'Reservacion' || key !== 'usuarioId')), id: 100, deletedAt: samples.beginAt }, options);
     assert.ifError(result.error);
     assert.equal(result.value.id, undefined);
     assert.equal(result.value.deletedAt, undefined);

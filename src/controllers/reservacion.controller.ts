@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import type {} from '../middlewares/auth.middleware';
 import * as service from '../services/reservacion.service';
 import { ResponseHelper } from '../helpers/response.helper';
 import { handleControllerError, requireObjectBody } from '../helpers/controller.helper';
@@ -40,7 +41,9 @@ export const createReservacion = async (req: Request, res: Response): Promise<vo
 export const updateReservacion = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.updateReservacion(String(req.params.id), req.body);
+    const result = req.user
+      ? await service.updateReservacion(String(req.params.id), req.body, req.user.id)
+      : await service.updateReservacion(String(req.params.id), req.body);
     if (!result) {
       ResponseHelper.notFound(res, 'Reservación no encontrada');
       return;
@@ -63,4 +66,3 @@ export const deleteReservacion = async (req: Request, res: Response): Promise<vo
     handleControllerError(res, error, 'deleteReservacion');
   }
 };
-

@@ -1,13 +1,16 @@
-import { createSchema, updateSchema, textoCortoSchema, descripcionSchema, fechaSchema, idSchema } from './common.schema';
+import Joi from 'joi';
+import { EstadoIncidencia } from '../entities/EstadoIncidencia';
+import { createSchema, updateSchema, descripcionSchema, idSchema } from './common.schema';
 
 const fields = {
-  estado: textoCortoSchema,
   descripcion: descripcionSchema,
-  closedAt: fechaSchema.allow(null),
   usuarioId: idSchema,
   unidadId: idSchema
 };
 
-export const createIncidenciaSchema = createSchema(fields, ["estado","descripcion","usuarioId","unidadId"]);
-export const updateIncidenciaSchema = updateSchema(fields);
-
+export const createIncidenciaSchema = createSchema({ ...fields, estado: Joi.forbidden(), closedAt: Joi.forbidden() }, Object.keys(fields));
+export const updateIncidenciaSchema = updateSchema({
+  ...fields,
+  closedAt: Joi.forbidden(),
+  estado: Joi.string().valid(...Object.values(EstadoIncidencia)),
+});

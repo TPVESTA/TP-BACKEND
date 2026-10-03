@@ -1,4 +1,5 @@
-import { Entity, PrimaryKey, Property, ManyToOne, Rel } from '@mikro-orm/core';
+import { Entity, PrimaryKey, Property, ManyToOne, Rel, Enum } from '@mikro-orm/core';
+import { EstadoIncidencia } from './EstadoIncidencia';
 import { User } from './User';
 import { Unidad } from './Unidad';
 
@@ -16,8 +17,8 @@ export class Incidencia {
   @Property({ type: 'datetime', nullable: true })
   closedAt: Date | null = null;
 
-  @Property()
-  estado!: string;
+  @Enum({ items: () => EstadoIncidencia, default: EstadoIncidencia.REPORTADO })
+  estado: EstadoIncidencia = EstadoIncidencia.REPORTADO;
 
   @Property({ type: 'text' })
   descripcion!: string;
