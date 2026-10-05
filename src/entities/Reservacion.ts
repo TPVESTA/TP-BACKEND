@@ -1,8 +1,10 @@
-import { Entity, PrimaryKey, Property, ManyToOne, Rel, Enum } from '@mikro-orm/core';
+import { Entity, PrimaryKey, Property, ManyToOne, Rel, Enum, Filter } from '@mikro-orm/core';
 import { EstadoReservacion } from './EstadoReservacion';
 import { User } from './User';
 import { AreaComun } from './AreaComun';
+import { Propiedad } from './Propiedad';
 
+@Filter({ name: 'softDelete', cond: { deletedAt: null }, default: true })
 @Entity({ tableName: 'reservacion' })
 export class Reservacion {
   @PrimaryKey()
@@ -13,6 +15,9 @@ export class Reservacion {
 
   @Property({ onUpdate: () => new Date() })
   updatedAt: Date = new Date();
+
+  @Property({ type: 'datetime', nullable: true })
+  deletedAt: Date | null = null;
 
   @Property()
   fechaReservacion!: Date;
@@ -28,4 +33,8 @@ export class Reservacion {
 
   @ManyToOne(() => AreaComun)
   areaComun!: Rel<AreaComun>;
+
+  // Conserva el contexto en que se creó, aunque después cambien las asignaciones.
+  @ManyToOne(() => Propiedad, { nullable: true })
+  propiedadOrigen: Rel<Propiedad> | null = null;
 }

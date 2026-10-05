@@ -2,6 +2,9 @@ import { AdminEdificio } from '../entities/AdminEdificio';
 import { Administracion } from '../entities/Administracion';
 import { Edificio } from '../entities/Edificio';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
+import { AuthorizationContext } from './authorization.service';
+import { AccionPermiso } from '../entities/Permiso';
+import { administrationBuildingWhere, requireGlobalStructure } from './structure-authorization.helper';
 
 export interface CreateAdminEdificioData {
   beginAt?: Date;
@@ -12,17 +15,18 @@ export interface CreateAdminEdificioData {
 
 export type UpdateAdminEdificioData = Partial<CreateAdminEdificioData>;
 
-export const getAllAdminEdificios = async (): Promise<AdminEdificio[]> => {
+export const getAllAdminEdificios = async (context: AuthorizationContext): Promise<AdminEdificio[]> => {
   const em = getEntityManager();
-  return em.find(AdminEdificio, {});
+  return em.find(AdminEdificio, administrationBuildingWhere<AdminEdificio>(context));
 };
 
-export const getAdminEdificioById = async (id: EntityId): Promise<AdminEdificio | null> => {
+export const getAdminEdificioById = async (id: EntityId, context: AuthorizationContext): Promise<AdminEdificio | null> => {
   const em = getEntityManager();
-  return em.findOne(AdminEdificio, { id: parseId(id) });
+  return em.findOne(AdminEdificio, { $and: [{ id: parseId(id) }, administrationBuildingWhere<AdminEdificio>(context)] });
 };
 
-export const createAdminEdificio = async (data: CreateAdminEdificioData): Promise<AdminEdificio> => {
+export const createAdminEdificio = async (data: CreateAdminEdificioData, context: AuthorizationContext): Promise<AdminEdificio> => {
+  requireGlobalStructure(context, AccionPermiso.CREAR);
   const em = getEntityManager();
   const entity = new AdminEdificio();
   if (data.beginAt !== undefined) entity.beginAt = data.beginAt;
@@ -33,7 +37,8 @@ export const createAdminEdificio = async (data: CreateAdminEdificioData): Promis
   return entity;
 };
 
-export const updateAdminEdificio = async (id: EntityId, data: UpdateAdminEdificioData): Promise<AdminEdificio | null> => {
+export const updateAdminEdificio = async (id: EntityId, data: UpdateAdminEdificioData, context: AuthorizationContext): Promise<AdminEdificio | null> => {
+  requireGlobalStructure(context, AccionPermiso.EDITAR);
   const em = getEntityManager();
   const entity = await em.findOne(AdminEdificio, { id: parseId(id) });
   if (!entity) return null;
@@ -45,11 +50,11 @@ export const updateAdminEdificio = async (id: EntityId, data: UpdateAdminEdifici
   return entity;
 };
 
-export const deleteAdminEdificio = async (id: EntityId): Promise<AdminEdificio | null> => {
+export const deleteAdminEdificio = async (id: EntityId, context: AuthorizationContext): Promise<AdminEdificio | null> => {
+  requireGlobalStructure(context, AccionPermiso.BORRAR);
   const em = getEntityManager();
   const entity = await em.findOne(AdminEdificio, { id: parseId(id) });
   if (!entity) return null;
   await em.removeAndFlush(entity);
   return entity;
 };
-

@@ -5,13 +5,16 @@ import { createSchema, updateSchema, fechaSchema, descripcionSchema, idSchema } 
 const fields = {
   fechaReservacion: fechaSchema,
   descripcion: descripcionSchema,
-  usuarioId: idSchema,
-  areaComunId: idSchema
+  areaComunId: idSchema,
+  propiedadId: idSchema
 };
 
-export const createReservacionSchema = createSchema({ ...fields, estado: Joi.forbidden() }, Object.keys(fields));
+export const createReservacionSchema = createSchema({ ...fields, usuarioId: Joi.forbidden(), estado: Joi.forbidden() }, ['fechaReservacion', 'descripcion', 'areaComunId']);
 export const updateReservacionSchema = updateSchema({
   ...fields,
   usuarioId: Joi.forbidden(),
+  propiedadId: Joi.forbidden(),
   estado: Joi.string().valid(EstadoReservacion.CANCELADO),
 });
+
+export const disponibilidadReservacionSchema = Joi.object({ areaComunId: idSchema.required() }).required();

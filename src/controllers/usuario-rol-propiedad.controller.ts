@@ -1,3 +1,4 @@
+import { requireAuthorization } from '../services/authorization-request.helper';
 import { Request, Response } from 'express';
 import * as service from '../services/usuario-rol-propiedad.service';
 import { ResponseHelper } from '../helpers/response.helper';
@@ -7,7 +8,7 @@ import { handleControllerError, requireObjectBody } from '../helpers/controller.
 
 export const getUsuariosRolesPropiedad = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getAllUsuariosRolesPropiedad();
+    const result = await service.getAllUsuariosRolesPropiedad(requireAuthorization(req));
     ResponseHelper.success(res, result);
   } catch (error: unknown) {
     handleControllerError(res, error, 'getUsuariosRolesPropiedad');
@@ -16,7 +17,7 @@ export const getUsuariosRolesPropiedad = async (req: Request, res: Response): Pr
 
 export const getUsuarioRolPropiedad = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getUsuarioRolPropiedadById(String(req.params.id));
+    const result = await service.getUsuarioRolPropiedadById(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Asignación de rol a propiedad no encontrada');
       return;
@@ -30,7 +31,7 @@ export const getUsuarioRolPropiedad = async (req: Request, res: Response): Promi
 export const createUsuarioRolPropiedad = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.createUsuarioRolPropiedad(req.body);
+    const result = await service.createUsuarioRolPropiedad(req.body, requireAuthorization(req));
     ResponseHelper.created(res, result, 'Asignación de rol a propiedad creada exitosamente');
   } catch (error: unknown) {
     handleControllerError(res, error, 'createUsuarioRolPropiedad');
@@ -40,7 +41,7 @@ export const createUsuarioRolPropiedad = async (req: Request, res: Response): Pr
 export const updateUsuarioRolPropiedad = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.updateUsuarioRolPropiedad(String(req.params.id), req.body);
+    const result = await service.updateUsuarioRolPropiedad(String(req.params.id), req.body, requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Asignación de rol a propiedad no encontrada');
       return;
@@ -53,7 +54,7 @@ export const updateUsuarioRolPropiedad = async (req: Request, res: Response): Pr
 
 export const deleteUsuarioRolPropiedad = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.deleteUsuarioRolPropiedad(String(req.params.id));
+    const result = await service.deleteUsuarioRolPropiedad(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Asignación de rol a propiedad no encontrada');
       return;

@@ -2,12 +2,16 @@ import { Router } from 'express';
 import * as controller from '../controllers/reservacion.controller';
 import { validate } from '../middlewares/validate';
 import { idParamSchema } from '../schemas/common.schema';
-import { createReservacionSchema, updateReservacionSchema } from '../schemas/reservacion.schema';
+import { createReservacionSchema, updateReservacionSchema, disponibilidadReservacionSchema } from '../schemas/reservacion.schema';
 
 // La autenticación se aplica en routes/index.ts antes de montar este router.
 const router: Router = Router();
 
 router.get('/', controller.getReservaciones);
+router.get('/disponibilidad',
+  validate({ location: 'query', schema: disponibilidadReservacionSchema }),
+  controller.getDisponibilidad
+);
 router.get('/:id',
   validate({ location: 'params', schema: idParamSchema }),
   controller.getReservacion

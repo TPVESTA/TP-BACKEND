@@ -4,13 +4,16 @@ import { createSchema, updateSchema, descripcionSchema, idSchema } from './commo
 
 const fields = {
   descripcion: descripcionSchema,
-  usuarioId: idSchema,
-  unidadId: idSchema
+  unidadId: idSchema,
+  propiedadId: idSchema
 };
 
-export const createIncidenciaSchema = createSchema({ ...fields, estado: Joi.forbidden(), closedAt: Joi.forbidden() }, Object.keys(fields));
+export const createIncidenciaSchema = createSchema({ ...fields, usuarioId: Joi.forbidden(), estado: Joi.forbidden(), closedAt: Joi.forbidden() }, ['descripcion', 'unidadId']);
 export const updateIncidenciaSchema = updateSchema({
-  ...fields,
+  descripcion: descripcionSchema,
+  usuarioId: Joi.forbidden(),
+  unidadId: Joi.forbidden(),
+  propiedadId: Joi.forbidden(),
   closedAt: Joi.forbidden(),
   estado: Joi.string().valid(...Object.values(EstadoIncidencia)),
 });

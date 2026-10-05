@@ -1,3 +1,6 @@
+import { AuthorizationContext } from './authorization.service';
+import { AccionPermiso } from '../entities/Permiso';
+import { propertyWhere, requireBuildingMutation } from './structure-authorization.helper';
 import { AmbitoUnidad } from '../entities/AmbitoUnidad';
 import { requireAmbitoUnidad } from './ambito-unidad.helper';
 import { Propiedad } from '../entities/Propiedad';
@@ -17,17 +20,20 @@ export interface CreatePropiedadData {
 
 export type UpdatePropiedadData = Partial<CreatePropiedadData>;
 
-export const getAllPropiedades = async (): Promise<Propiedad[]> => {
+export const getAllPropiedades = async (context: AuthorizationContext): Promise<Propiedad[]> => {
+  const scope = propertyWhere<Propiedad>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.find(Propiedad, {});
+  return em.find(Propiedad, scope);
 };
 
-export const getPropiedadById = async (id: EntityId): Promise<Propiedad | null> => {
+export const getPropiedadById = async (id: EntityId, context: AuthorizationContext): Promise<Propiedad | null> => {
+  const scope = propertyWhere<Propiedad>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.findOne(Propiedad, { id: parseId(id) });
+  return em.findOne(Propiedad, { $and: [{ id: parseId(id) }, scope] });
 };
 
-export const createPropiedad = async (data: CreatePropiedadData): Promise<Propiedad> => {
+export const createPropiedad = async (data: CreatePropiedadData, context: AuthorizationContext): Promise<Propiedad> => {
+  requireBuildingMutation(context, AccionPermiso.CREAR, parseId(data.edificioId));
   const em = getEntityManager();
   const entity = new Propiedad();
   entity.nroUnidad = data.nroUnidad;
@@ -42,10 +48,12 @@ export const createPropiedad = async (data: CreatePropiedadData): Promise<Propie
   return entity;
 };
 
-export const updatePropiedad = async (id: EntityId, data: UpdatePropiedadData): Promise<Propiedad | null> => {
+export const updatePropiedad = async (id: EntityId, data: UpdatePropiedadData, context: AuthorizationContext): Promise<Propiedad | null> => {
+  const scope = propertyWhere<Propiedad>(context, AccionPermiso.EDITAR);
   const em = getEntityManager();
-  const entity = await em.findOne(Propiedad, { id: parseId(id) });
+  const entity = await em.findOne(Propiedad, { $and: [{ id: parseId(id) }, scope] });
   if (!entity) return null;
+  if (data.edificioId !== undefined) requireBuildingMutation(context, AccionPermiso.EDITAR, parseId(data.edificioId));
   if (data.nroUnidad !== undefined) entity.nroUnidad = data.nroUnidad;
   if (data.mtCuadrados !== undefined) entity.mtCuadrados = data.mtCuadrados;
   if (data.descripcion !== undefined) entity.descripcion = data.descripcion;
@@ -60,9 +68,10 @@ export const updatePropiedad = async (id: EntityId, data: UpdatePropiedadData): 
   return entity;
 };
 
-export const deletePropiedad = async (id: EntityId): Promise<Propiedad | null> => {
+export const deletePropiedad = async (id: EntityId, context: AuthorizationContext): Promise<Propiedad | null> => {
+  const scope = propertyWhere<Propiedad>(context, AccionPermiso.BORRAR);
   const em = getEntityManager();
-  const entity = await em.findOne(Propiedad, { id: parseId(id) });
+  const entity = await em.findOne(Propiedad, { $and: [{ id: parseId(id) }, scope] });
   if (!entity) return null;
   await em.removeAndFlush(entity);
   return entity;

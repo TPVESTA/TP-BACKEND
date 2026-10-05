@@ -1,3 +1,6 @@
+import { AuthorizationContext } from './authorization.service';
+import { AccionPermiso } from '../entities/Permiso';
+import { requireCatalogPermission } from './structure-authorization.helper';
 import { TipoUnidad } from '../entities/TipoUnidad';
 import { AmbitoUnidad } from '../entities/AmbitoUnidad';
 import { Propiedad } from '../entities/Propiedad';
@@ -12,17 +15,20 @@ export interface CreateTipoUnidadData {
 
 export type UpdateTipoUnidadData = Partial<CreateTipoUnidadData>;
 
-export const getAllTiposUnidad = async (): Promise<TipoUnidad[]> => {
+export const getAllTiposUnidad = async (context: AuthorizationContext): Promise<TipoUnidad[]> => {
+  requireCatalogPermission(context, AccionPermiso.LEER);
   const em = getEntityManager();
   return em.find(TipoUnidad, {});
 };
 
-export const getTipoUnidadById = async (id: EntityId): Promise<TipoUnidad | null> => {
+export const getTipoUnidadById = async (id: EntityId, context: AuthorizationContext): Promise<TipoUnidad | null> => {
+  requireCatalogPermission(context, AccionPermiso.LEER);
   const em = getEntityManager();
   return em.findOne(TipoUnidad, { id: parseId(id) });
 };
 
-export const createTipoUnidad = async (data: CreateTipoUnidadData): Promise<TipoUnidad> => {
+export const createTipoUnidad = async (data: CreateTipoUnidadData, context: AuthorizationContext): Promise<TipoUnidad> => {
+  requireCatalogPermission(context, AccionPermiso.CREAR);
   const em = getEntityManager();
   const entity = new TipoUnidad();
   entity.nombre = data.nombre;
@@ -31,7 +37,8 @@ export const createTipoUnidad = async (data: CreateTipoUnidadData): Promise<Tipo
   return entity;
 };
 
-export const updateTipoUnidad = async (id: EntityId, data: UpdateTipoUnidadData): Promise<TipoUnidad | null> => {
+export const updateTipoUnidad = async (id: EntityId, data: UpdateTipoUnidadData, context: AuthorizationContext): Promise<TipoUnidad | null> => {
+  requireCatalogPermission(context, AccionPermiso.EDITAR);
   const em = getEntityManager();
   const entity = await em.findOne(TipoUnidad, { id: parseId(id) });
   if (!entity) return null;
@@ -48,7 +55,8 @@ export const updateTipoUnidad = async (id: EntityId, data: UpdateTipoUnidadData)
   return entity;
 };
 
-export const deleteTipoUnidad = async (id: EntityId): Promise<TipoUnidad | null> => {
+export const deleteTipoUnidad = async (id: EntityId, context: AuthorizationContext): Promise<TipoUnidad | null> => {
+  requireCatalogPermission(context, AccionPermiso.BORRAR);
   const em = getEntityManager();
   const entity = await em.findOne(TipoUnidad, { id: parseId(id) });
   if (!entity) return null;

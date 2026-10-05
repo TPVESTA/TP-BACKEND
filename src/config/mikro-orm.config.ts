@@ -17,6 +17,8 @@ import { Incidencia } from '../entities/Incidencia';
 import { Reservacion } from '../entities/Reservacion';
 
 import { UsuarioRol } from '../entities/UsuarioRol';
+import { RolPermiso } from '../entities/RolPermiso';
+import { UsuarioAdministracion } from '../entities/UsuarioAdministracion';
 
 const config: Options<MySqlDriver> = {
   driver: MySqlDriver,
@@ -28,7 +30,7 @@ const config: Options<MySqlDriver> = {
   charset: 'utf8mb4',
   debug: process.env.NODE_ENV !== 'production' && process.env.DB_DEBUG === 'true',
   allowGlobalContext: true,
-  entities: [UsuarioRol, User, Rol, Administracion, Edificio, Localidad, TipoUnidad, Unidad, Propiedad, AreaComun, Empleado, AdminEdificio, UsuarioRolPropiedad, Incidencia, Reservacion],
+  entities: [UsuarioRol, UsuarioAdministracion, User, Rol, RolPermiso, Administracion, Edificio, Localidad, TipoUnidad, Unidad, Propiedad, AreaComun, Empleado, AdminEdificio, UsuarioRolPropiedad, Incidencia, Reservacion],
   discovery: {
     warnWhenNoEntities: false,
   },

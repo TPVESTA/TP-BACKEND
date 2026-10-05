@@ -1,3 +1,6 @@
+import { AuthorizationContext } from './authorization.service';
+import { AccionPermiso } from '../entities/Permiso';
+import { commonAreaWhere, requireBuildingMutation } from './structure-authorization.helper';
 import { AmbitoUnidad } from '../entities/AmbitoUnidad';
 import { requireAmbitoUnidad } from './ambito-unidad.helper';
 import { AreaComun } from '../entities/AreaComun';
@@ -16,17 +19,20 @@ export interface CreateAreaComunData {
 
 export type UpdateAreaComunData = Partial<CreateAreaComunData>;
 
-export const getAllAreasComunes = async (): Promise<AreaComun[]> => {
+export const getAllAreasComunes = async (context: AuthorizationContext): Promise<AreaComun[]> => {
+  const scope = commonAreaWhere<AreaComun>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.find(AreaComun, {});
+  return em.find(AreaComun, scope);
 };
 
-export const getAreaComunById = async (id: EntityId): Promise<AreaComun | null> => {
+export const getAreaComunById = async (id: EntityId, context: AuthorizationContext): Promise<AreaComun | null> => {
+  const scope = commonAreaWhere<AreaComun>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.findOne(AreaComun, { id: parseId(id) });
+  return em.findOne(AreaComun, { $and: [{ id: parseId(id) }, scope] });
 };
 
-export const createAreaComun = async (data: CreateAreaComunData): Promise<AreaComun> => {
+export const createAreaComun = async (data: CreateAreaComunData, context: AuthorizationContext): Promise<AreaComun> => {
+  requireBuildingMutation(context, AccionPermiso.CREAR, parseId(data.edificioId));
   const em = getEntityManager();
   const entity = new AreaComun();
   entity.nroUnidad = data.nroUnidad;
@@ -40,10 +46,12 @@ export const createAreaComun = async (data: CreateAreaComunData): Promise<AreaCo
   return entity;
 };
 
-export const updateAreaComun = async (id: EntityId, data: UpdateAreaComunData): Promise<AreaComun | null> => {
+export const updateAreaComun = async (id: EntityId, data: UpdateAreaComunData, context: AuthorizationContext): Promise<AreaComun | null> => {
+  const scope = commonAreaWhere<AreaComun>(context, AccionPermiso.EDITAR);
   const em = getEntityManager();
-  const entity = await em.findOne(AreaComun, { id: parseId(id) });
+  const entity = await em.findOne(AreaComun, { $and: [{ id: parseId(id) }, scope] });
   if (!entity) return null;
+  if (data.edificioId !== undefined) requireBuildingMutation(context, AccionPermiso.EDITAR, parseId(data.edificioId));
   if (data.nroUnidad !== undefined) entity.nroUnidad = data.nroUnidad;
   if (data.mtCuadrados !== undefined) entity.mtCuadrados = data.mtCuadrados;
   if (data.descripcion !== undefined) entity.descripcion = data.descripcion;
@@ -57,9 +65,10 @@ export const updateAreaComun = async (id: EntityId, data: UpdateAreaComunData): 
   return entity;
 };
 
-export const deleteAreaComun = async (id: EntityId): Promise<AreaComun | null> => {
+export const deleteAreaComun = async (id: EntityId, context: AuthorizationContext): Promise<AreaComun | null> => {
+  const scope = commonAreaWhere<AreaComun>(context, AccionPermiso.BORRAR);
   const em = getEntityManager();
-  const entity = await em.findOne(AreaComun, { id: parseId(id) });
+  const entity = await em.findOne(AreaComun, { $and: [{ id: parseId(id) }, scope] });
   if (!entity) return null;
   await em.removeAndFlush(entity);
   return entity;

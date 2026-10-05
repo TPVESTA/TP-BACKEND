@@ -1,3 +1,4 @@
+import { requireAuthorization } from '../services/authorization-request.helper';
 import { Request, Response } from 'express';
 import * as service from '../services/localidad.service';
 import { ResponseHelper } from '../helpers/response.helper';
@@ -7,7 +8,7 @@ import { handleControllerError, requireObjectBody } from '../helpers/controller.
 
 export const getLocalidades = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getAllLocalidades();
+    const result = await service.getAllLocalidades(requireAuthorization(req));
     ResponseHelper.success(res, result);
   } catch (error: unknown) {
     handleControllerError(res, error, 'getLocalidades');
@@ -16,7 +17,7 @@ export const getLocalidades = async (req: Request, res: Response): Promise<void>
 
 export const getLocalidad = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getLocalidadById(String(req.params.id));
+    const result = await service.getLocalidadById(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Localidad no encontrada');
       return;
@@ -30,7 +31,7 @@ export const getLocalidad = async (req: Request, res: Response): Promise<void> =
 export const createLocalidad = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.createLocalidad(req.body);
+    const result = await service.createLocalidad(req.body, requireAuthorization(req));
     ResponseHelper.created(res, result, 'Localidad creada exitosamente');
   } catch (error: unknown) {
     handleControllerError(res, error, 'createLocalidad');
@@ -40,7 +41,7 @@ export const createLocalidad = async (req: Request, res: Response): Promise<void
 export const updateLocalidad = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.updateLocalidad(String(req.params.id), req.body);
+    const result = await service.updateLocalidad(String(req.params.id), req.body, requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Localidad no encontrada');
       return;
@@ -53,7 +54,7 @@ export const updateLocalidad = async (req: Request, res: Response): Promise<void
 
 export const deleteLocalidad = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.deleteLocalidad(String(req.params.id));
+    const result = await service.deleteLocalidad(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Localidad no encontrada');
       return;

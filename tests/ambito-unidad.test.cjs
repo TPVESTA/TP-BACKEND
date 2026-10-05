@@ -7,6 +7,13 @@ const { TipoUnidad } = require('../src/entities/TipoUnidad');
 const { requireAmbitoUnidad } = require('../src/services/ambito-unidad.helper');
 const service = require('../src/services/tipo-unidad.service');
 const manager = require('../src/database/DatabaseManager').default.getInstance();
+const { getDefaultRolePermissions } = require('../src/services/permission-seed.service');
+const superadminContext = {
+  usuarioId: 1, now: new Date(), grants: [{
+    rolId: 1, rolCodigo: 'SUPERADMIN', ambito: 'GLOBAL', edificioIds: [],
+    permisos: getDefaultRolePermissions('SUPERADMIN'),
+  }],
+};
 
 test('alta exige PRIVADO o COMUN; no admite null ni valores desconocidos', () => {
   for (const ambito of ['PRIVADO', 'COMUN']) {
@@ -44,16 +51,16 @@ test('guarda el ámbito y evita reclasificar tipos utilizados por unidades incom
     persistAndFlush: async entity => { saved = entity; },
   }) } });
   try {
-    await service.createTipoUnidad({ nombre: 'SUM', ambito: 'COMUN' });
+    await service.createTipoUnidad({ nombre: 'SUM', ambito: 'COMUN' }, superadminContext);
     assert.equal(saved.ambito, 'COMUN');
-    await service.updateTipoUnidad(1, { ambito: 'PRIVADO' });
+    await service.updateTipoUnidad(1, { ambito: 'PRIVADO' }, superadminContext);
     assert.equal(tipo.ambito, 'PRIVADO');
     assert.equal(consultedClass, 'AreaComun');
     incompatibleCount = 1;
-    await assert.rejects(service.updateTipoUnidad(1, { ambito: 'COMUN' }), /incompatible/);
+    await assert.rejects(service.updateTipoUnidad(1, { ambito: 'COMUN' }, superadminContext), /incompatible/);
     assert.equal(consultedClass, 'Propiedad');
     assert.equal(tipo.ambito, 'PRIVADO');
-    await service.updateTipoUnidad(1, { nombre: 'Departamento actualizado' });
+    await service.updateTipoUnidad(1, { nombre: 'Departamento actualizado' }, superadminContext);
     assert.equal(tipo.nombre, 'Departamento actualizado');
   } finally { manager.getORM = original; }
 });
