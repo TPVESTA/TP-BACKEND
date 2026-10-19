@@ -79,6 +79,20 @@ test('la vigencia incluye el inicio y excluye el instante de fin', () => {
   assert.equal(isActiveAssignment({ beginAt: new Date('invalid'), endAt: null }, now), false);
 });
 
+test('SUPERADMIN tiene todas las acciones sin depender de su matriz ni del contexto seleccionado', () => {
+  const ctx = context([grant(AmbitoRol.GLOBAL, { rolCodigo: CodigoRol.SUPERADMIN })]);
+  for (const section of Object.values(S)) for (const action of Object.values(A)) {
+    assert.equal(hasPermission(ctx, section, action, { edificioId: 999, propiedadId: 888, administracionId: 777 }), true);
+    for (const scope of Object.values(AmbitoRol)) {
+      assert.equal(authorizedScope(ctx, section, action, scope).global, true);
+    }
+  }
+  assert.equal(hasPermission(ctx, 'OTRA', A.LEER), false);
+  assert.equal(hasPermission(ctx, S.RESERVAS, 'TODO'), false);
+  assert.equal(hasPermission(ctx, S.RESERVAS, A.LEER, { edificioId: -1 }), false);
+  assert.equal(hasPermission(context([grant(AmbitoRol.PROPIEDAD, { rolCodigo: CodigoRol.SUPERADMIN })]), S.ROLES, A.EDITAR), false);
+});
+
 function loaderFixture() {
   const past = new Date(Date.now() - 60_000);
   const future = new Date(Date.now() + 60_000);
@@ -151,6 +165,39 @@ test('usuarios inactivos y edificios o administraciones dados de baja no conserv
   state.administration.deletedAt = new Date();
   ctx = await loadAuthorizationContext(7, state.em);
   assert.deepEqual(ctx.grants, []);
+});
+
+test('SysAdmin global anterior recibe permisos completos y conserva la revocacion de su asignacion', async () => {
+  for (const role of [
+    { codigo: CodigoRol.SUPERADMIN, nombre: 'Nombre cambiado' },
+    { codigo: 'SYSADMIN', nombre: 'Administrador del sistema' },
+    { codigo: null, nombre: ' SysAdmin ' },
+  ]) {
+    const state = loaderFixture();
+    const assignment = { beginAt: new Date(Date.now() - 60_000), endAt: null,
+      rol: { id: 90, ambito: AmbitoRol.GLOBAL, ...role } };
+    state.rows.set(UsuarioRol, [assignment]);
+    const ctx = await loadAuthorizationContext(7, state.em);
+    const admin = ctx.grants.find(item => item.rolId === 90);
+    assert.equal(admin.rolCodigo, CodigoRol.SUPERADMIN);
+    for (const section of Object.values(S)) for (const action of Object.values(A)) {
+      assert.equal(hasPermission(context([admin]), section, action), true);
+      assert.equal(require('../src/services/authorization.service').permissionAllows(
+        admin.permisos.find(item => item.seccion === section), action), true);
+    }
+    assignment.endAt = new Date(Date.now() - 1);
+    assert.equal((await loadAuthorizationContext(7, state.em)).grants.some(item => item.rolId === 90), false);
+    assignment.endAt = null;
+    state.user.estado = false;
+    assert.deepEqual((await loadAuthorizationContext(7, state.em)).grants, []);
+  }
+});
+
+test('un rol global comun no recibe privilegios de SysAdmin por su ambito', async () => {
+  const state = loaderFixture();
+  state.rows.set(UsuarioRol, [{ beginAt: new Date(Date.now() - 60_000), endAt: null,
+    rol: { id: 90, codigo: null, nombre: 'Operador', ambito: AmbitoRol.GLOBAL } }]);
+  assert.equal(hasPermission(await loadAuthorizationContext(7, state.em), S.ROLES, A.EDITAR), false);
 });
 
 function seedFixture() {

@@ -2,13 +2,15 @@ import { EntityManager } from '@mikro-orm/core';
 import { AdminEdificio } from '../entities/AdminEdificio';
 import { AmbitoRol } from '../entities/AmbitoRol';
 import { Empleado } from '../entities/Empleado';
-import { AccionPermiso, SeccionPermiso } from '../entities/Permiso';
+import { AccionPermiso, CodigoRol, SeccionPermiso } from '../entities/Permiso';
 import { RolPermiso } from '../entities/RolPermiso';
 import { User } from '../entities/User';
 import { UsuarioRol } from '../entities/UsuarioRol';
 import { UsuarioRolPropiedad } from '../entities/UsuarioRolPropiedad';
 import { AuthorizationError } from '../errors/authorization.error';
 import { EntityId, getEntityManager, parseId } from './service.helper';
+import { getDefaultRolePermissions } from './permission-seed.service';
+import { isSystemAdminRole } from './system-admin.helper';
 
 export interface PermissionDescriptor {
   seccion: SeccionPermiso;
@@ -94,9 +96,14 @@ export const matchingGrants = (
   target?: AuthorizationTarget, ambito?: AmbitoRol,
 ): AuthorizationGrant[] => {
   if (!Object.values(SeccionPermiso).includes(section) || !Object.values(AccionPermiso).includes(action)) return [];
-  return context.grants.filter(grant =>
+  return context.grants.filter(grant => {
+    if (isSystemAdminRole({ ambito: grant.ambito, codigo: grant.rolCodigo })) {
+      return target === undefined || validTarget(target);
+    }
+    return (
     (ambito === undefined || grant.ambito === ambito) && grantMatchesTarget(grant, target) &&
     grant.permisos.some(permission => permission.seccion === section && permissionAllows(permission, action)));
+  });
 };
 
 export const hasPermission = (
@@ -156,8 +163,9 @@ export const loadAuthorizationContext = async (
     .filter(permission => permission.rol.id === rolId)
     .map(({ seccion, crear, leer, editar, borrar, acciones }) => ({ seccion, crear, leer, editar, borrar, acciones: [...acciones] }));
   for (const item of activeGlobals) context.grants.push({
-    rolId: item.rol.id, rolCodigo: item.rol.codigo ?? null, ambito: AmbitoRol.GLOBAL,
-    edificioIds: [], permisos: permissionsFor(item.rol.id),
+    rolId: item.rol.id, rolCodigo: isSystemAdminRole(item.rol) ? CodigoRol.SUPERADMIN : item.rol.codigo ?? null,
+    ambito: AmbitoRol.GLOBAL, edificioIds: [],
+    permisos: isSystemAdminRole(item.rol) ? getDefaultRolePermissions(CodigoRol.SUPERADMIN) : permissionsFor(item.rol.id),
   });
   for (const item of activeProperties) context.grants.push({
     rolId: item.rol.id, rolCodigo: item.rol.codigo ?? null, ambito: AmbitoRol.PROPIEDAD,
