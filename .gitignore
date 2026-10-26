@@ -99,8 +99,14 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# Keep local tests ignored except for the service regression suite.
+# Keep regression suites versioned; other local test artifacts remain ignored.
 /tests/*
+!/tests/ambito-unidad.test.cjs
+!/tests/authorization.test.cjs
+!/tests/assignments-permissions.test.cjs
+!/tests/business-permissions.test.cjs
+!/tests/structure-permissions.test.cjs
+!/tests/permissions-routes.test.cjs
 
 
 /Entidades.md

@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { ResponseHelper } from '../helpers/response.helper';
 import * as authService from '../services/auth.service';
+import { requireAuthorization } from '../services/authorization-request.helper';
+import { updateOwnProfile } from '../services/user.service';
+import { handleControllerError } from '../helpers/controller.helper';
 
 // Controlador para registro de usuarios
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -52,4 +55,19 @@ export const verifyToken = async (req: Request, res: Response): Promise<void> =>
   } catch (error) {
     ResponseHelper.error(res, 'Error interno del servidor');
   }
+};
+
+export const getPermissions = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const ctx = requireAuthorization(req);
+    ResponseHelper.success(res, { usuarioId: ctx.usuarioId, contextos: ctx.grants });
+  } catch (error) { handleControllerError(res, error, 'getPermissions'); }
+};
+
+export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await updateOwnProfile(req.body, requireAuthorization(req));
+    if (!user) { ResponseHelper.notFound(res, 'Usuario no encontrado'); return; }
+    ResponseHelper.success(res, user, 'Perfil actualizado');
+  } catch (error) { handleControllerError(res, error, 'updateProfile'); }
 };

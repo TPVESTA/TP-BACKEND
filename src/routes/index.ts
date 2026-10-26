@@ -15,6 +15,9 @@ import usuarioRolPropiedadRoutes from './usuario-rol-propiedad.routes';
 import incidenciaRoutes from './incidencia.routes';
 import reservacionRoutes from './reservacion.routes';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import { authorizationMiddleware } from '../middlewares/authorization.middleware';
+
+import usuarioRolRoutes from './usuario-rol.routes';
 
 const router: express.Router = express.Router();
 
@@ -22,7 +25,9 @@ const router: express.Router = express.Router();
 router.use('/auth', authRoutes);
 // Montar todas las rutas de negocio después de esta protección.
 router.use(authMiddleware);
+router.use(authorizationMiddleware);
 router.use('/users', userRoutes);
+router.use('/usuarios-roles', usuarioRolRoutes);
 router.use('/administraciones', administracionRoutes);
 router.use('/edificios', edificioRoutes);
 router.use('/localidades', localidadRoutes);

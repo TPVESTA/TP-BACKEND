@@ -9,7 +9,7 @@ const { AmbitoRol } = require('../src/entities/AmbitoRol');
 const { parseId } = require('../src/services/service.helper');
 const specs = [
   {"file":"localidad","name":"Localidad","plural":"Localidades","fields":{"nombre":"string","provincia":"string"}},
-  {"file":"tipo-unidad","name":"TipoUnidad","plural":"TiposUnidad","fields":{"nombre":"string"}},
+  {"file":"tipo-unidad","name":"TipoUnidad","plural":"TiposUnidad","fields":{"nombre":"string","ambito":"AmbitoUnidad"}},
   {"file":"rol","name":"Rol","plural":"Roles","fields":{"nombre":"string","descripcion":"string","ambito":"AmbitoRol"}},
   {"file":"administracion","name":"Administracion","plural":"Administraciones","fields":{"cuit":"string","nombre":"string","email":"string","direccion":"string"},"soft":true},
   {"file":"edificio","name":"Edificio","plural":"Edificios","fields":{"cuit":"string","nombre":"string","direccion":"string"},"rels":{"localidad":"Localidad"},"soft":true},
@@ -18,8 +18,8 @@ const specs = [
   {"file":"empleado","name":"Empleado","plural":"Empleados","fields":{"beginAt?":"Date","endAt?":"Date | null"},"rels":{"usuario":"User","administracion":"Administracion","rol":"Rol"}},
   {"file":"admin-edificio","name":"AdminEdificio","plural":"AdminEdificios","fields":{"beginAt?":"Date","endAt?":"Date | null"},"rels":{"administracion":"Administracion","edificio":"Edificio"}},
   {"file":"usuario-rol-propiedad","name":"UsuarioRolPropiedad","plural":"UsuariosRolesPropiedad","fields":{"beginAt?":"Date","endAt?":"Date | null"},"rels":{"usuario":"User","rol":"Rol","propiedad":"Propiedad"}},
-  {"file":"incidencia","name":"Incidencia","plural":"Incidencias","fields":{"estado":"string","descripcion":"string","closedAt?":"Date | null"},"rels":{"usuario":"User","unidad":"Unidad"}},
-  {"file":"reservacion","name":"Reservacion","plural":"Reservaciones","fields":{"fechaReservacion":"Date","estado":"string","descripcion":"string"},"rels":{"usuario":"User","areaComun":"AreaComun"}},
+  {"file":"incidencia","name":"Incidencia","plural":"Incidencias","fields":{"descripcion":"string"},"rels":{"usuario":"User","unidad":"Unidad"}},
+  {"file":"reservacion","name":"Reservacion","plural":"Reservaciones","fields":{"fechaReservacion":"Date","descripcion":"string"},"rels":{"usuario":"User","areaComun":"AreaComun"}},
 ];
 let orm;
 let originalGetORM;
@@ -73,8 +73,8 @@ function fixture(spec, state) {
   for (const [raw, type] of Object.entries(spec.fields)) {
     const field = raw.replace('?', '');
     data[field] = type === 'number' ? 10
-      : type === 'AmbitoRol' ? AmbitoRol.ADMINISTRACION
-      : type === 'Date' ? new Date('2026-01-01')
+      : type === 'AmbitoUnidad' ? 'PRIVADO' : type === 'AmbitoRol' ? AmbitoRol.ADMINISTRACION
+      : type === 'Date' ? new Date(spec.name === 'Reservacion' ? '2099-01-01' : '2026-01-01')
       : type === 'Date | null' ? null : 'Prueba';
   }
   for (const [field, name] of Object.entries(spec.rels || {})) {
@@ -82,6 +82,7 @@ function fixture(spec, state) {
       ? require('../src/entities/Propiedad').Propiedad
       : require('../src/entities/' + name)[name];
     const related = state.put(new Entity());
+    if (name === 'TipoUnidad') related.ambito = spec.name === 'AreaComun' ? 'COMUN' : 'PRIVADO';
     if (name === 'Rol') related.ambito = spec.name === 'Empleado' ? AmbitoRol.ADMINISTRACION : AmbitoRol.PROPIEDAD;
     if (name === 'Unidad') state.records.set('Unidad:1', related);
     data[field + 'Id'] = '1';
@@ -119,10 +120,10 @@ for (const spec of specs) {
     await service['update' + spec.name](5, { campoDesconocido: true, id: 1000 });
     assert.equal(entity[field], original);
     assert.equal(entity.id, 5);
-    const replacement = original instanceof Date ? new Date('2025-12-01') : typeof original === 'number' ? 20 : 'Modificado';
+    const replacement = original instanceof Date ? new Date(spec.name === 'Reservacion' ? '2099-12-01' : '2025-12-01') : typeof original === 'number' ? 20 : 'Modificado';
     await service['update' + spec.name](5, { [field]: replacement });
     assert.equal(entity[field], replacement);
-    if ('endAt' in entity || 'closedAt' in entity) {
+    if ('endAt' in entity) {
       const dateField = 'endAt' in entity ? 'endAt' : 'closedAt';
       await service['update' + spec.name](5, { [dateField]: new Date('2026-02-01') });
       await service['update' + spec.name](5, { [dateField]: null });
@@ -153,7 +154,7 @@ for (const spec of specs) {
         state.put(entity, 5);
         const count = state.saved.length;
         await assert.rejects(service['create' + spec.name]({ ...data, [field + 'Id']: 404 }), /no encontrado/);
-        await assert.rejects(service['update' + spec.name](5, { [field + 'Id']: 404 }), /no encontrado/);
+        await assert.rejects(service['update' + spec.name](5, { [field + 'Id']: 404 }), spec.name === 'Reservacion' && field === 'usuario' ? /cambiar el usuario/ : /no encontrado/);
         assert.equal(state.saved.length, count);
         if (['User', 'Edificio', 'Administracion'].includes(name)) {
           state.records.get(name + ':1').deletedAt = new Date();

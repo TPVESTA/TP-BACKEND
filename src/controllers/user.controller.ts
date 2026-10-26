@@ -1,89 +1,42 @@
-import { Request, Response } from 'express';
-import * as userService from '../services/user.service';
+﻿import { Request, Response } from 'express';
+import * as service from '../services/user.service';
+import { requireAuthorization } from '../services/authorization-request.helper';
 import { ResponseHelper } from '../helpers/response.helper';
+import { handleControllerError } from '../helpers/controller.helper';
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const users = await userService.getAllUsers();
-    
-    ResponseHelper.success(res, users);
-  } catch (error) {
-    console.error('Error en getUsers:', error);
-    
-    ResponseHelper.error(res, 'Error interno del servidor');
-  }
+  try { ResponseHelper.success(res, await service.getAllUsers(requireAuthorization(req))); }
+  catch (error) { handleControllerError(res, error, 'getUsers'); }
 };
-
 export const getUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = await userService.getUserById(String(req.params.id));
-
-    if (!user) {
-      ResponseHelper.notFound(res, "Usuario no encontrado");
-      return;
-    }
-    
+    const user = await service.getUserById(String(req.params.id), requireAuthorization(req));
+    if (!user) { ResponseHelper.notFound(res, 'Usuario no encontrado'); return; }
     ResponseHelper.success(res, user);
-  } catch (error) {
-    console.error('Error en getUser:', error);
-    
-    ResponseHelper.error(res, 'Error interno del servidor');
-  }
+  } catch (error) { handleControllerError(res, error, 'getUser'); }
 };
-
-// Controlador para crear un nuevo usuario
 export const createUser = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { cuil, nombre, apellido, email, fechaNacimiento, password, estado } = req.body;
-    const newUser = await userService.createUser({ cuil, nombre, apellido, email, fechaNacimiento, password, estado });
-
-    ResponseHelper.created(res, newUser, 'Usuario creado exitosamente');
-  } catch (error: any) {
-    console.error('Error en createUser:', error);
-    
-    if (error.message.includes('registrado')) {
-      ResponseHelper.badRequest(res, error.message);
-      return;
-    }
-    ResponseHelper.error(res, 'Error interno del servidor');
-  }
+  try { ResponseHelper.created(res, await service.createUser(req.body, requireAuthorization(req)), 'Usuario creado'); }
+  catch (error) { handleControllerError(res, error, 'createUser'); }
 };
-
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const updatedUser = await userService.updateUser(String(req.params.id), req.body);
-    
-    if (!updatedUser) {
-      ResponseHelper.notFound(res, "Usuario no encontrado");
-      return;
-    }
-    
-    ResponseHelper.success(res, updatedUser, 'Usuario actualizado exitosamente');
-  } catch (error: any) {
-    console.error('Error en updateUser:', error);
-    
-    if (error.message.includes('registrado')) {
-      ResponseHelper.badRequest(res, error.message);
-      return;
-    }
-    
-    ResponseHelper.error(res, 'Error interno del servidor');
-  }
+    const user = await service.updateUser(String(req.params.id), req.body, requireAuthorization(req));
+    if (!user) { ResponseHelper.notFound(res, 'Usuario no encontrado'); return; }
+    ResponseHelper.success(res, user, 'Usuario actualizado');
+  } catch (error) { handleControllerError(res, error, 'updateUser'); }
 };
-
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const deletedUser = await userService.deleteUser(String(req.params.id));
-    
-    if (!deletedUser) {
-      ResponseHelper.notFound(res, "Usuario no encontrado");
-      return;
-    }
-    
-    ResponseHelper.success(res, deletedUser, 'Usuario eliminado exitosamente');
-  } catch (error) {
-    console.error('Error en deleteUser:', error);
-    
-    ResponseHelper.error(res, 'Error interno del servidor');
-  }
+    const adminId = req.params.administracionId;
+    const user = await service.deleteUser(String(req.params.id), requireAuthorization(req), adminId === undefined ? undefined : String(adminId));
+    if (!user) { ResponseHelper.notFound(res, 'Usuario o vínculo no encontrado'); return; }
+    ResponseHelper.success(res, user, adminId === undefined ? 'Cuenta dada de baja' : 'Vínculo con la administración finalizado');
+  } catch (error) { handleControllerError(res, error, 'deleteUser'); }
+};
+export const linkAdministration = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const link = await service.linkUserAdministration(String(req.params.id), String(req.params.administracionId), requireAuthorization(req));
+    ResponseHelper.created(res, link, 'Usuario vinculado a la administración');
+  } catch (error) { handleControllerError(res, error, 'linkAdministration'); }
 };

@@ -1,6 +1,7 @@
 import { MikroORM } from '@mikro-orm/core';
 import { MySqlDriver } from '@mikro-orm/mysql';
 import config from '../config/mikro-orm.config';
+import { seedDefaultPermissions } from '../services/permission-seed.service';
 
 class DatabaseManager {
   private static instance: DatabaseManager;
@@ -18,11 +19,17 @@ class DatabaseManager {
   public async initialize(): Promise<MikroORM<MySqlDriver>> {
     if (!this.orm) {
       console.log('Conectando a la base de datos...');
-      this.orm = await MikroORM.init<MySqlDriver>(config);
-      
-      // Crear el esquema de la base de datos si no existe
-      const generator = this.orm.getSchemaGenerator();
-      await generator.updateSchema();
+      const orm = await MikroORM.init<MySqlDriver>(config);
+      try {
+        // Crear el esquema de la base de datos si no existe.
+        const generator = orm.getSchemaGenerator();
+        await generator.updateSchema();
+        await seedDefaultPermissions(orm.em.fork());
+        this.orm = orm;
+      } catch (error) {
+        await orm.close();
+        throw error;
+      }
       
       console.log('Conexión a la base de datos establecida');
     }

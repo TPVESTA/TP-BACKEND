@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { ForeignKeyConstraintViolationException, UniqueConstraintViolationException } from '@mikro-orm/core';
 import { DomainValidationError } from '../errors/domain-validation.error';
 import { ResponseHelper } from './response.helper';
+import { AuthorizationError } from '../errors/authorization.error';
 
 // Solo comprueba la estructura; las reglas de cada campo corresponden a Joi.
 export const requireObjectBody = (body: unknown): void => {
@@ -11,6 +12,10 @@ export const requireObjectBody = (body: unknown): void => {
 };
 
 export const handleControllerError = (res: Response, error: unknown, operation: string): void => {
+  if (error instanceof AuthorizationError) {
+    ResponseHelper.error(res, error.message, 403);
+    return;
+  }
   if (error instanceof DomainValidationError) {
     ResponseHelper.badRequest(res, error.message);
     return;

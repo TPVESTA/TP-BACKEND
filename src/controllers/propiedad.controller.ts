@@ -1,3 +1,4 @@
+import { requireAuthorization } from '../services/authorization-request.helper';
 import { Request, Response } from 'express';
 import * as service from '../services/propiedad.service';
 import { ResponseHelper } from '../helpers/response.helper';
@@ -7,7 +8,7 @@ import { handleControllerError, requireObjectBody } from '../helpers/controller.
 
 export const getPropiedades = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getAllPropiedades();
+    const result = await service.getAllPropiedades(requireAuthorization(req));
     ResponseHelper.success(res, result);
   } catch (error: unknown) {
     handleControllerError(res, error, 'getPropiedades');
@@ -16,7 +17,7 @@ export const getPropiedades = async (req: Request, res: Response): Promise<void>
 
 export const getPropiedad = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getPropiedadById(String(req.params.id));
+    const result = await service.getPropiedadById(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Propiedad no encontrada');
       return;
@@ -30,7 +31,7 @@ export const getPropiedad = async (req: Request, res: Response): Promise<void> =
 export const createPropiedad = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.createPropiedad(req.body);
+    const result = await service.createPropiedad(req.body, requireAuthorization(req));
     ResponseHelper.created(res, result, 'Propiedad creada exitosamente');
   } catch (error: unknown) {
     handleControllerError(res, error, 'createPropiedad');
@@ -40,7 +41,7 @@ export const createPropiedad = async (req: Request, res: Response): Promise<void
 export const updatePropiedad = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.updatePropiedad(String(req.params.id), req.body);
+    const result = await service.updatePropiedad(String(req.params.id), req.body, requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Propiedad no encontrada');
       return;
@@ -53,7 +54,7 @@ export const updatePropiedad = async (req: Request, res: Response): Promise<void
 
 export const deletePropiedad = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.deletePropiedad(String(req.params.id));
+    const result = await service.deletePropiedad(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Propiedad no encontrada');
       return;

@@ -1,3 +1,4 @@
+import { requireAuthorization } from '../services/authorization-request.helper';
 import { Request, Response } from 'express';
 import * as service from '../services/edificio.service';
 import { ResponseHelper } from '../helpers/response.helper';
@@ -7,7 +8,7 @@ import { handleControllerError, requireObjectBody } from '../helpers/controller.
 
 export const getEdificios = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getAllEdificios();
+    const result = await service.getAllEdificios(requireAuthorization(req));
     ResponseHelper.success(res, result);
   } catch (error: unknown) {
     handleControllerError(res, error, 'getEdificios');
@@ -16,7 +17,7 @@ export const getEdificios = async (req: Request, res: Response): Promise<void> =
 
 export const getEdificio = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getEdificioById(String(req.params.id));
+    const result = await service.getEdificioById(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Edificio no encontrado');
       return;
@@ -30,7 +31,7 @@ export const getEdificio = async (req: Request, res: Response): Promise<void> =>
 export const createEdificio = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.createEdificio(req.body);
+    const result = await service.createEdificio(req.body, requireAuthorization(req));
     ResponseHelper.created(res, result, 'Edificio creado exitosamente');
   } catch (error: unknown) {
     handleControllerError(res, error, 'createEdificio');
@@ -40,7 +41,7 @@ export const createEdificio = async (req: Request, res: Response): Promise<void>
 export const updateEdificio = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.updateEdificio(String(req.params.id), req.body);
+    const result = await service.updateEdificio(String(req.params.id), req.body, requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Edificio no encontrado');
       return;
@@ -53,7 +54,7 @@ export const updateEdificio = async (req: Request, res: Response): Promise<void>
 
 export const deleteEdificio = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.deleteEdificio(String(req.params.id));
+    const result = await service.deleteEdificio(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Edificio no encontrado');
       return;

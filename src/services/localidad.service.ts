@@ -1,3 +1,6 @@
+import { AuthorizationContext } from './authorization.service';
+import { AccionPermiso } from '../entities/Permiso';
+import { requireCatalogPermission } from './structure-authorization.helper';
 import { Localidad } from '../entities/Localidad';
 import { EntityId, getEntityManager, parseId } from './service.helper';
 
@@ -8,17 +11,20 @@ export interface CreateLocalidadData {
 
 export type UpdateLocalidadData = Partial<CreateLocalidadData>;
 
-export const getAllLocalidades = async (): Promise<Localidad[]> => {
+export const getAllLocalidades = async (context: AuthorizationContext): Promise<Localidad[]> => {
+  requireCatalogPermission(context, AccionPermiso.LEER);
   const em = getEntityManager();
   return em.find(Localidad, {});
 };
 
-export const getLocalidadById = async (id: EntityId): Promise<Localidad | null> => {
+export const getLocalidadById = async (id: EntityId, context: AuthorizationContext): Promise<Localidad | null> => {
+  requireCatalogPermission(context, AccionPermiso.LEER);
   const em = getEntityManager();
   return em.findOne(Localidad, { id: parseId(id) });
 };
 
-export const createLocalidad = async (data: CreateLocalidadData): Promise<Localidad> => {
+export const createLocalidad = async (data: CreateLocalidadData, context: AuthorizationContext): Promise<Localidad> => {
+  requireCatalogPermission(context, AccionPermiso.CREAR);
   const em = getEntityManager();
   const entity = new Localidad();
   entity.nombre = data.nombre;
@@ -27,7 +33,8 @@ export const createLocalidad = async (data: CreateLocalidadData): Promise<Locali
   return entity;
 };
 
-export const updateLocalidad = async (id: EntityId, data: UpdateLocalidadData): Promise<Localidad | null> => {
+export const updateLocalidad = async (id: EntityId, data: UpdateLocalidadData, context: AuthorizationContext): Promise<Localidad | null> => {
+  requireCatalogPermission(context, AccionPermiso.EDITAR);
   const em = getEntityManager();
   const entity = await em.findOne(Localidad, { id: parseId(id) });
   if (!entity) return null;
@@ -37,7 +44,8 @@ export const updateLocalidad = async (id: EntityId, data: UpdateLocalidadData): 
   return entity;
 };
 
-export const deleteLocalidad = async (id: EntityId): Promise<Localidad | null> => {
+export const deleteLocalidad = async (id: EntityId, context: AuthorizationContext): Promise<Localidad | null> => {
+  requireCatalogPermission(context, AccionPermiso.BORRAR);
   const em = getEntityManager();
   const entity = await em.findOne(Localidad, { id: parseId(id) });
   if (!entity) return null;

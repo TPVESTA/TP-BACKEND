@@ -1,3 +1,4 @@
+import { requireAuthorization } from '../services/authorization-request.helper';
 import { Request, Response } from 'express';
 import * as service from '../services/administracion.service';
 import { ResponseHelper } from '../helpers/response.helper';
@@ -7,7 +8,7 @@ import { handleControllerError, requireObjectBody } from '../helpers/controller.
 
 export const getAdministraciones = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getAllAdministraciones();
+    const result = await service.getAllAdministraciones(requireAuthorization(req));
     ResponseHelper.success(res, result);
   } catch (error: unknown) {
     handleControllerError(res, error, 'getAdministraciones');
@@ -16,7 +17,7 @@ export const getAdministraciones = async (req: Request, res: Response): Promise<
 
 export const getAdministracion = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getAdministracionById(String(req.params.id));
+    const result = await service.getAdministracionById(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Administración no encontrada');
       return;
@@ -30,7 +31,7 @@ export const getAdministracion = async (req: Request, res: Response): Promise<vo
 export const createAdministracion = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.createAdministracion(req.body);
+    const result = await service.createAdministracion(req.body, requireAuthorization(req));
     ResponseHelper.created(res, result, 'Administración creada exitosamente');
   } catch (error: unknown) {
     handleControllerError(res, error, 'createAdministracion');
@@ -40,7 +41,7 @@ export const createAdministracion = async (req: Request, res: Response): Promise
 export const updateAdministracion = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.updateAdministracion(String(req.params.id), req.body);
+    const result = await service.updateAdministracion(String(req.params.id), req.body, requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Administración no encontrada');
       return;
@@ -53,7 +54,7 @@ export const updateAdministracion = async (req: Request, res: Response): Promise
 
 export const deleteAdministracion = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.deleteAdministracion(String(req.params.id));
+    const result = await service.deleteAdministracion(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Administración no encontrada');
       return;

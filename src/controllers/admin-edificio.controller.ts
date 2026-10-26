@@ -1,3 +1,4 @@
+import { requireAuthorization } from '../services/authorization-request.helper';
 import { Request, Response } from 'express';
 import * as service from '../services/admin-edificio.service';
 import { ResponseHelper } from '../helpers/response.helper';
@@ -7,7 +8,7 @@ import { handleControllerError, requireObjectBody } from '../helpers/controller.
 
 export const getAdminEdificios = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getAllAdminEdificios();
+    const result = await service.getAllAdminEdificios(requireAuthorization(req));
     ResponseHelper.success(res, result);
   } catch (error: unknown) {
     handleControllerError(res, error, 'getAdminEdificios');
@@ -16,7 +17,7 @@ export const getAdminEdificios = async (req: Request, res: Response): Promise<vo
 
 export const getAdminEdificio = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.getAdminEdificioById(String(req.params.id));
+    const result = await service.getAdminEdificioById(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Asignación de administración a edificio no encontrada');
       return;
@@ -30,7 +31,7 @@ export const getAdminEdificio = async (req: Request, res: Response): Promise<voi
 export const createAdminEdificio = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.createAdminEdificio(req.body);
+    const result = await service.createAdminEdificio(req.body, requireAuthorization(req));
     ResponseHelper.created(res, result, 'Asignación de administración a edificio creada exitosamente');
   } catch (error: unknown) {
     handleControllerError(res, error, 'createAdminEdificio');
@@ -40,7 +41,7 @@ export const createAdminEdificio = async (req: Request, res: Response): Promise<
 export const updateAdminEdificio = async (req: Request, res: Response): Promise<void> => {
   try {
     requireObjectBody(req.body);
-    const result = await service.updateAdminEdificio(String(req.params.id), req.body);
+    const result = await service.updateAdminEdificio(String(req.params.id), req.body, requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Asignación de administración a edificio no encontrada');
       return;
@@ -53,7 +54,7 @@ export const updateAdminEdificio = async (req: Request, res: Response): Promise<
 
 export const deleteAdminEdificio = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await service.deleteAdminEdificio(String(req.params.id));
+    const result = await service.deleteAdminEdificio(String(req.params.id), requireAuthorization(req));
     if (!result) {
       ResponseHelper.notFound(res, 'Asignación de administración a edificio no encontrada');
       return;
