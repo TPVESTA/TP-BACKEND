@@ -6,10 +6,10 @@ Con MySQL disponible y las variables `DB_*` configuradas en `.env`, ejecutar:
 npm run seed
 ```
 
-El comando prepara las tablas sin eliminar tablas ni columnas y carga datos ficticios:
+El comando prepara las tablas sin eliminar tablas ni columnas, **borra todos los datos anteriores de la aplicación** y carga únicamente estos datos ficticios y sus roles y permisos iniciales:
 
 - Rosario, Santa Fe, y la Administración Rosario Centro.
-- 4 edificios: Parque Independencia, Costa del Paraná, Boulevard Oroño y Pichincha.
+- 4 edificios: Parque Independencia, Centro, Boulevard Oroño y Pichincha.
 - 10 departamentos por edificio (40 en total), con copropiedad de 10% cada uno.
 - 2 espacios comunes por edificio (8 en total): SUM y terraza con parrillero.
 - 10 inquilinos distribuidos entre los edificios, con el rol `RESIDENTE`.
@@ -17,7 +17,7 @@ El comando prepara las tablas sin eliminar tablas ni columnas y carga datos fict
 - Un empleado administrativo y uno de mantenimiento en la administración que gestiona los 4 edificios.
 - Un sysadmin con rol global `SUPERADMIN`.
 
-Todas las cuentas nuevas tienen contraseña **`ROOT`**, guardada como hash bcrypt.
+Todas las cuentas tienen contraseña **`ROOT123`**, guardada como hash bcrypt.
 
 | Perfil | Email |
 | --- | --- |
@@ -27,6 +27,6 @@ Todas las cuentas nuevas tienen contraseña **`ROOT`**, guardada como hash bcryp
 | Inquilinos | `inquilino1@rosario.example` a `inquilino10@rosario.example` |
 | Propietarios | `propietario1@rosario.example` a `propietario5@rosario.example` |
 
-Se puede repetir el comando: reutiliza los registros y vínculos vigentes, conserva las contraseñas y los permisos existentes, y no borra datos. Si encuentra una cuenta deshabilitada o un registro eliminado que coincide con los del seed, falla sin reactivarlo. La carga de datos se realiza en una transacción; si falla, se revierte completa.
+Cada ejecución reemplaza los datos, incluidos registros con baja lógica, cuentas deshabilitadas, reservas, incidencias y permisos personalizados. Las cuentas y sus contraseñas se crean nuevamente. La limpieza respeta las claves foráneas y se realiza en la misma transacción que la carga: si falla, se revierten ambas operaciones.
 
-El login acepta `ROOT` para estas cuentas. El alta y los cambios de contraseña mediante la API conservan el mínimo de 6 caracteres.
+El login acepta `ROOT123` para estas cuentas. El alta y los cambios de contraseña mediante la API conservan el mínimo de 6 caracteres.

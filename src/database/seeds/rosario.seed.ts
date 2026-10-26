@@ -6,11 +6,15 @@ import { AmbitoUnidad } from "../../entities/AmbitoUnidad";
 import { AreaComun } from "../../entities/AreaComun";
 import { Edificio } from "../../entities/Edificio";
 import { Empleado } from "../../entities/Empleado";
+import { Incidencia } from "../../entities/Incidencia";
 import { Localidad } from "../../entities/Localidad";
 import { CodigoRol } from "../../entities/Permiso";
 import { Propiedad } from "../../entities/Propiedad";
+import { Reservacion } from "../../entities/Reservacion";
 import { Rol } from "../../entities/Rol";
+import { RolPermiso } from "../../entities/RolPermiso";
 import { TipoUnidad } from "../../entities/TipoUnidad";
+import { Unidad } from "../../entities/Unidad";
 import { User } from "../../entities/User";
 import { UsuarioAdministracion } from "../../entities/UsuarioAdministracion";
 import { UsuarioRol } from "../../entities/UsuarioRol";
@@ -80,6 +84,29 @@ async function ensure<T extends object>(
 
 export async function seedRosario(entityManager: EntityManager) {
   return entityManager.transactional(async (em) => {
+    // Borra primero los registros dependientes para respetar las claves foráneas.
+    // DELETE permite revertir la limpieza si falla la carga (a diferencia de TRUNCATE).
+    for (const entity of [
+      Reservacion,
+      Incidencia,
+      UsuarioRolPropiedad,
+      UsuarioRol,
+      UsuarioAdministracion,
+      Empleado,
+      AdminEdificio,
+      RolPermiso,
+      Unidad,
+      Edificio,
+      Administracion,
+      Localidad,
+      TipoUnidad,
+      Rol,
+      User,
+    ]) {
+      await em.nativeDelete<object>(entity, {}, { filters: false });
+    }
+    em.clear();
+
     // El seed asigna explícitamente su sysadmin, sin consumir el bootstrap de la API.
     await seedDefaultPermissions(em, "");
     const roles = new Map<CodigoRol, Rol>();
@@ -234,7 +261,7 @@ export async function seedRosario(entityManager: EntityManager) {
           apellido,
           email,
           new Date(Date.UTC(1980 + index, index % 12, 15)),
-          await bcrypt.hash("ROOT", 12),
+          await bcrypt.hash("ROOT123", 12),
           true,
         );
         account.cuil = fiscalId(20, 30000000 + index);

@@ -12,7 +12,8 @@ async function main(): Promise<void> {
     await orm.getSchemaGenerator().updateSchema({ safe: true, dropTables: false });
     const summary = await seedRosario(orm.em.fork());
     console.log('Seed Rosario completado:', summary);
-    console.log('Todas las cuentas nuevas usan la contraseña ROOT. Ver SEED.md para los emails.');
+    console.log('Los datos anteriores fueron reemplazados por el seed Rosario.');
+    console.log('Todas las cuentas usan la contraseña ROOT123. Ver SEED.md para los emails.');
   } finally {
     await orm.close(true);
   }
