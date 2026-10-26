@@ -23,7 +23,8 @@ export const updateProfileSchema = updateSchema({ ...fields, estado: Joi.forbidd
 export const userAdministrationParamsSchema = createSchema({ id: idSchema, administracionId: idSchema });
 export const loginUserSchema = createSchema({
   email: emailSchema,
-  password: passwordSchema
+  // El login valida credenciales existentes, incluidas las cuentas del seed.
+  password: Joi.string().min(1).max(18)
 });
 
 // Mantiene compatibles los imports de las rutas actuales.
