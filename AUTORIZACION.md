@@ -2,7 +2,7 @@
 
 La autenticación identifica al usuario mediante el JWT existente (`userId`). Cada petición protegida carga sus asignaciones y permisos actuales desde la base. Quitar un permiso o finalizar una asignación surte efecto en la siguiente petición, sin emitir otro token.
 
-Una asignación está vigente cuando `beginAt <= ahora` y `endAt` es nulo o mayor que ahora. Los usuarios deshabilitados o dados de baja no pueden operar. Las administraciones y edificios dados de baja no conceden acceso contextual.
+Una asignación global está vigente cuando `beginAt <= ahora` y `endAt` es nulo o mayor que ahora. Un empleo o una asignación de propiedad concede acceso solo si ese período y el de su `usuario_rol` están vigentes a la vez. Los usuarios deshabilitados o dados de baja no pueden operar. Las administraciones y edificios dados de baja no conceden acceso contextual.
 
 ## Configuración inicial
 

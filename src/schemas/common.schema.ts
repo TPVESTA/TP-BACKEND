@@ -10,6 +10,12 @@ export const idSchema = Joi.alternatives().try(
 
 export const idParamSchema = Joi.object({ id: idSchema.required() }).required();
 export const nombreSchema = Joi.string().trim().min(2).max(100);
+// Nombres de persona: letras (con tildes y ñ), separadas por espacio, apóstrofo o guion.
+export const nombrePersonaSchema = Joi.string().trim().min(2).max(100).pattern(/^[\p{L}]+(?:[ '\-][\p{L}]+)*$/u).messages({
+  'string.pattern.base': '{#label} solo puede contener letras, espacios, apóstrofos y guiones',
+  'string.min': '{#label} debe tener al menos {#limit} caracteres',
+  'string.max': '{#label} no puede superar {#limit} caracteres',
+});
 export const textoCortoSchema = Joi.string().trim().min(1).max(255);
 export const descripcionSchema = Joi.string().trim().min(1);
 export const emailSchema = Joi.string().trim().email({ tlds: { allow: false } }).max(255);

@@ -63,14 +63,14 @@ function fixture() {
     }))),
     UsuarioRol: [],
     UsuarioRolPropiedad: [
-      { id: 101, usuario: resident, rol: roles[0], propiedad: ownProperty, beginAt, endAt: null },
-      { id: 102, usuario: foreignMember, rol: roles[4], propiedad: foreignProperty, beginAt, endAt: null },
+      { id: 101, usuarioRol: { id: 1, usuario: resident, rol: roles[0], beginAt, endAt: null }, propiedad: ownProperty, beginAt, endAt: null },
+      { id: 102, usuarioRol: { id: 2, usuario: foreignMember, rol: roles[4], beginAt, endAt: null }, propiedad: foreignProperty, beginAt, endAt: null },
     ],
     Empleado: [
-      { id: 200, usuario: administrator, rol: roles[1], administracion: ownAdmin, beginAt, endAt: null },
-      { id: 201, usuario: foreignWorker, rol: roles[2], administracion: foreignAdmin, beginAt, endAt: null },
+      { id: 200, usuarioRol: { id: 3, usuario: administrator, rol: roles[1], beginAt, endAt: null }, administracion: ownAdmin, beginAt, endAt: null },
+      { id: 201, usuarioRol: { id: 4, usuario: foreignWorker, rol: roles[2], beginAt, endAt: null }, administracion: foreignAdmin, beginAt, endAt: null },
       // Expired jobs and building management must not grant another context.
-      { id: 202, usuario: administrator, rol: roles[1], administracion: foreignAdmin, beginAt, endAt: pastEnd },
+      { id: 202, usuarioRol: { id: 3, usuario: administrator, rol: roles[1], beginAt, endAt: null }, administracion: foreignAdmin, beginAt, endAt: pastEnd },
     ],
     AdminEdificio: [
       { id: 250, administracion: ownAdmin, edificio: ownBuilding, beginAt, endAt: null },
@@ -282,6 +282,22 @@ test('la gestion de asignaciones limita consultas, bajas y altas a la administra
     const foreignProperty = await request('POST', '/usuarios-roles-propiedad', 2, { usuarioId: 3, rolId: 11, propiedadId: 102 });
     assert.equal(foreignProperty.status, 403);
     assert.equal(writes.length, 0);
+  });
+});
+
+test('el alta de un empleado reutiliza el usuario_rol abierto del mismo usuario y rol', async () => {
+  await withApp(async ({ request, rows }) => {
+    const first = await request('POST', '/empleados', 2, { usuarioId: 3, rolId: 13, administracionId: 30 });
+    assert.equal(first.status, 201, JSON.stringify(first.body));
+    const links = () => rows.UsuarioRol.filter(item => item.usuario?.id === 3 && item.rol?.id === 13);
+    assert.equal(links().length, 1);
+    assert.equal(links()[0].endAt, null);
+    assert.equal(first.body.data.usuarioRol.rol.id, 13);
+    const second = await request('POST', '/empleados', 2, { usuarioId: 3, rolId: 13, administracionId: 30, beginAt: '2020-01-01T00:00:00.000Z' });
+    assert.equal(second.status, 201, JSON.stringify(second.body));
+    assert.equal(links().length, 1);
+    assert.equal(links()[0].beginAt.toISOString(), '2020-01-01T00:00:00.000Z');
+    assert.equal(rows.Empleado.filter(item => item.usuarioRol === links()[0]).length, 2);
   });
 });
 

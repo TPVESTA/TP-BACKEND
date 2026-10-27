@@ -5,12 +5,13 @@ import { Propiedad } from '../entities/Propiedad';
 import { AmbitoRol } from '../entities/AmbitoRol';
 import { SeccionPermiso as S, AccionPermiso as A } from '../entities/Permiso';
 import { AuthorizationContext, requirePermission } from './authorization.service';
-import { assignmentScope, requireGlobal, requireDelegableRole, revokeAssignment } from './assignment-authorization.helper';
+import { assignmentScope, requireDelegableRole, revokeAssignment } from './assignment-authorization.helper';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
 import { DomainValidationError } from '../errors/domain-validation.error';
 import { AuthorizationError } from '../errors/authorization.error';
 import { getUserById } from './user.service';
 import { authorizedScope } from './authorization.service';
+import { findOrCreateOpenUsuarioRol } from './usuario-rol-link.helper';
 
 export interface CreateUsuarioRolPropiedadData {
   beginAt?: Date; endAt?: Date | null; usuarioId: EntityId; rolId: EntityId;
@@ -20,13 +21,13 @@ export type UpdateUsuarioRolPropiedadData = Partial<CreateUsuarioRolPropiedadDat
 const filter = (ctx: AuthorizationContext) => { const scope = assignmentScope(ctx);
   return scope.global ? {} : { propiedad: { edificio: { id: { $in: scope.edificioIds } } } }; };
 const target = (entity: UsuarioRolPropiedad) => ({ propiedadId: entity.propiedad.id, edificioId: entity.propiedad.edificio.id });
-const populate = ["rol.permisos","propiedad.edificio"] as const;
+const populate = ["usuarioRol.usuario", "usuarioRol.rol.permisos", "propiedad.edificio"] as const;
 
 export const getAllUsuariosRolesPropiedad = async (ctx: AuthorizationContext): Promise<UsuarioRolPropiedad[]> => {
-  return getEntityManager().find(UsuarioRolPropiedad, filter(ctx), { populate: [...populate] });
+  return getEntityManager().find(UsuarioRolPropiedad, filter(ctx), { populate: [...populate], filters: { softDelete: false } });
 };
 export const getUsuarioRolPropiedadById = async (id: EntityId, ctx: AuthorizationContext): Promise<UsuarioRolPropiedad | null> => {
-  return getEntityManager().findOne(UsuarioRolPropiedad, { $and: [filter(ctx), { id: parseId(id) }] }, { populate: [...populate] });
+  return getEntityManager().findOne(UsuarioRolPropiedad, { $and: [filter(ctx), { id: parseId(id) }] }, { populate: [...populate], filters: { softDelete: false } });
 };
 export const createUsuarioRolPropiedad = async (data: CreateUsuarioRolPropiedadData, ctx: AuthorizationContext): Promise<UsuarioRolPropiedad> => {
   assignmentScope(ctx, A.ASIGNAR);
@@ -35,32 +36,31 @@ export const createUsuarioRolPropiedad = async (data: CreateUsuarioRolPropiedadD
   const user = authorizedScope(ctx, S.ASIGNACIONES, A.ASIGNAR, AmbitoRol.GLOBAL).global
     ? await requireEntity(em, User, data.usuarioId, 'Usuario') : await getUserById(data.usuarioId, ctx);
   if (!user) throw new AuthorizationError('El usuario está fuera de su ámbito de gestión.');
-  entity.usuario = user;
   const role = await em.findOne(Rol, { id: parseId(data.rolId) }, { populate: ['permisos'] });
   if (!role || role.ambito !== AmbitoRol.PROPIEDAD) throw new DomainValidationError('Rol inexistente o de ?mbito incompatible.');
-  entity.rol = role;
   entity.propiedad = await requireEntity(em, Propiedad, data.propiedadId, 'Propiedad');
   await em.populate(entity.propiedad, ['edificio']);
   requireDelegableRole(ctx, role, target(entity));
   if (data.beginAt !== undefined) entity.beginAt = data.beginAt;
   if (data.endAt !== undefined) entity.endAt = data.endAt;
+  entity.usuarioRol = await findOrCreateOpenUsuarioRol(em, user, role, entity.beginAt, ctx.now);
   await em.persistAndFlush(entity);
   return entity;
 };
 export const updateUsuarioRolPropiedad = async (id: EntityId, data: UpdateUsuarioRolPropiedadData, ctx: AuthorizationContext): Promise<UsuarioRolPropiedad | null> => {
   const em = getEntityManager();
-  const entity = await em.findOne(UsuarioRolPropiedad, { $and: [filter(ctx), { id: parseId(id) }] }, { populate: [...populate] });
+  const entity = await em.findOne(UsuarioRolPropiedad, { $and: [filter(ctx), { id: parseId(id) }] }, { populate: [...populate], filters: { softDelete: false } });
   if (!entity) return null;
   requirePermission(ctx, S.ASIGNACIONES, A.REVOCAR, target(entity));
   // Una asignaci?n es hist?rica: cambios de usuario, rol o contexto requieren revocar y crear otra.
-  if ((data.usuarioId !== undefined && parseId(data.usuarioId) !== entity.usuario.id)
-      || (data.rolId !== undefined && parseId(data.rolId) !== entity.rol.id)
+  if ((data.usuarioId !== undefined && parseId(data.usuarioId) !== entity.usuarioRol.usuario.id)
+      || (data.rolId !== undefined && parseId(data.rolId) !== entity.usuarioRol.rol.id)
       || (data.propiedadId !== undefined && parseId(data.propiedadId) !== entity.propiedad.id)) {
     throw new DomainValidationError('No se puede cambiar el usuario, rol o contexto de una asignaci?n; revoque y cree otra.');
   }
   // Extender/reabrir vigencia tambi?n concede acceso, por lo que exige permiso de asignaci?n.
   if (data.beginAt !== undefined || data.endAt === null || (data.endAt !== undefined && entity.endAt !== null && data.endAt > entity.endAt)) {
-    requireDelegableRole(ctx, entity.rol, target(entity));
+    requireDelegableRole(ctx, entity.usuarioRol.rol, target(entity));
   }
   if (data.beginAt !== undefined) entity.beginAt = data.beginAt;
   if (data.endAt !== undefined) entity.endAt = data.endAt;
@@ -69,7 +69,7 @@ export const updateUsuarioRolPropiedad = async (id: EntityId, data: UpdateUsuari
 };
 export const deleteUsuarioRolPropiedad = async (id: EntityId, ctx: AuthorizationContext): Promise<UsuarioRolPropiedad | null> => {
   const em = getEntityManager();
-  const entity = await em.findOne(UsuarioRolPropiedad, { $and: [filter(ctx), { id: parseId(id) }] }, { populate: [...populate] });
+  const entity = await em.findOne(UsuarioRolPropiedad, { $and: [filter(ctx), { id: parseId(id) }] }, { populate: [...populate], filters: { softDelete: false } });
   if (!entity) return null;
   requirePermission(ctx, S.ASIGNACIONES, A.REVOCAR, target(entity));
   revokeAssignment(entity, ctx.now);

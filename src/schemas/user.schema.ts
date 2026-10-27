@@ -1,6 +1,6 @@
 ﻿import Joi from 'joi';
 import {
-  createSchema, updateSchema, nombreSchema, emailSchema,
+  createSchema, updateSchema, nombrePersonaSchema, emailSchema,
   identificacionFiscalSchema, fechaSchema, idSchema
 } from './common.schema';
 
@@ -8,8 +8,8 @@ import {
 const passwordSchema = Joi.string().min(6).max(18);
 const fields = {
   cuil: identificacionFiscalSchema,
-  nombre: nombreSchema,
-  apellido: nombreSchema,
+  nombre: nombrePersonaSchema,
+  apellido: nombrePersonaSchema,
   email: emailSchema,
   fechaNacimiento: fechaSchema.max('now'),
   password: passwordSchema,

@@ -30,9 +30,12 @@ const userFilter = async (em: EntityManager, ctx: AuthorizationContext, action: 
   const active = { beginAt: { $lte: ctx.now }, $or: [{ endAt: null }, { endAt: { $gt: ctx.now } }] };
   const [members, jobs] = await Promise.all([
     em.find(UsuarioAdministracion, { administracion: { $in: scope.administracionIds }, ...active }),
-    em.find(Empleado, { administracion: { $in: scope.administracionIds }, ...active }),
+    em.find(Empleado, { administracion: { $in: scope.administracionIds }, ...active }, { populate: ['usuarioRol.usuario'] }),
   ]);
-  return { id: { $in: [...new Set([...members, ...jobs].map(item => item.usuario.id))] } };
+  return { id: { $in: [...new Set([
+    ...members.map(item => item.usuario.id),
+    ...jobs.map(item => item.usuarioRol.usuario.id),
+  ])] } };
 };
 
 export const getAllUsers = async (ctx: AuthorizationContext): Promise<User[]> => {
@@ -131,7 +134,7 @@ export const deleteUser = async (id: EntityId, ctx: AuthorizationContext, admini
     const pending = { $or: [{ endAt: null }, { endAt: { $gt: ctx.now } }] };
     const [members, jobs] = await Promise.all([
       em.find(UsuarioAdministracion, { usuario: user.id, administracion: adminId, ...pending }),
-      em.find(Empleado, { usuario: user.id, administracion: adminId, ...pending }),
+      em.find(Empleado, { usuarioRol: { usuario: user.id }, administracion: adminId, ...pending }),
     ]);
     if (members.length === 0 && jobs.length === 0) return null;
     if (jobs.length) requirePermission(ctx, S.ASIGNACIONES, A.REVOCAR, { administracionId: adminId });

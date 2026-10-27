@@ -1,6 +1,5 @@
 import { Entity, PrimaryKey, Property, Filter, OneToMany, Collection } from '@mikro-orm/core';
-import { Empleado } from './Empleado';
-import { UsuarioRolPropiedad } from './UsuarioRolPropiedad';
+import { UsuarioRol } from './UsuarioRol';
 import { Incidencia } from './Incidencia';
 import { Reservacion } from './Reservacion';
 
@@ -40,11 +39,8 @@ export class User {
   @Property()
   estado!: boolean;
 
-  @OneToMany(() => Empleado, empleado => empleado.usuario)
-  empleos = new Collection<Empleado>(this);
-
-  @OneToMany(() => UsuarioRolPropiedad, asignacion => asignacion.usuario)
-  rolesPropiedad = new Collection<UsuarioRolPropiedad>(this);
+  @OneToMany(() => UsuarioRol, asignacion => asignacion.usuario)
+  roles = new Collection<UsuarioRol>(this);
 
   @OneToMany(() => Incidencia, incidencia => incidencia.usuario)
   incidencias = new Collection<Incidencia>(this);

@@ -230,7 +230,7 @@ test('todas las respuestas de reservas/incidencias proyectan autor sin datos sen
   const incidenceController = require('../src/controllers/incidencia.controller');
   const confidential = { id: 1, nombre: 'Ana', apellido: 'Pérez', email: 'private@example.test',
     cuil: 'SECRET_CUIL', fechaNacimiento: new Date('1990-01-01'), estado: true,
-    password: 'SECRET_PASSWORD', empleos: [{ usuario: { email: 'NESTED_SECRET' } }] };
+    password: 'SECRET_PASSWORD', roles: [{ usuario: { email: 'NESTED_SECRET' } }] };
   const booking = reservation({ usuario: confidential });
   const report = incidence({ usuario: confidential });
   booking.propiedadOrigen.usuariosRoles = [{ usuario: confidential }];
@@ -259,7 +259,7 @@ test('todas las respuestas de reservas/incidencias proyectan autor sin datos sen
       assert.equal(res.body.success, true, method);
       const item = Array.isArray(res.body.data) ? res.body.data[0] : res.body.data;
       assert.deepEqual(item.usuario, { id: 1, nombre: 'Ana', apellido: 'Pérez' });
-      for (const sensitive of ['email', 'cuil', 'password', 'fechaNacimiento', 'empleos', 'usuariosRoles', 'NESTED_SECRET']) {
+      for (const sensitive of ['email', 'cuil', 'password', 'fechaNacimiento', 'roles', 'usuariosRoles', 'NESTED_SECRET']) {
         assert.equal(JSON.stringify(res.body).includes(sensitive), false, method + ': ' + sensitive);
       }
     } finally { service[method] = original; }

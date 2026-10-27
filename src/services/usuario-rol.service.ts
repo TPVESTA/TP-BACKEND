@@ -15,7 +15,7 @@ export interface CreateUsuarioRolData {
 }
 export type UpdateUsuarioRolData = Partial<CreateUsuarioRolData>;
 const filter = (ctx: AuthorizationContext) => { requireGlobal(ctx, S.ASIGNACIONES, A.LEER);
-  return {}; };
+  return { rol: { ambito: AmbitoRol.GLOBAL } }; };
 const target = (entity: UsuarioRol) => ({});
 const populate = ["rol.permisos"] as const;
 

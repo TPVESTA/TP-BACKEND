@@ -1,8 +1,7 @@
 import { DomainValidationError } from '../errors/domain-validation.error';
 import { Entity, Property, PrimaryKey, Enum, OneToMany, Collection, BeforeUpdate, EventArgs } from '@mikro-orm/core';
 import { AmbitoRol } from './AmbitoRol';
-import { Empleado } from './Empleado';
-import { UsuarioRolPropiedad } from './UsuarioRolPropiedad';
+import { UsuarioRol } from './UsuarioRol';
 import { RolPermiso } from './RolPermiso';
 
 @Entity({ tableName: 'rol' })
@@ -29,11 +28,8 @@ export class Rol {
   @Enum(() => AmbitoRol)
   ambito!: AmbitoRol;
 
-  @OneToMany(() => Empleado, empleado => empleado.rol)
-  empleados = new Collection<Empleado>(this);
-
-  @OneToMany(() => UsuarioRolPropiedad, asignacion => asignacion.rol)
-  asignacionesPropiedad = new Collection<UsuarioRolPropiedad>(this);
+  @OneToMany(() => UsuarioRol, asignacion => asignacion.rol)
+  asignaciones = new Collection<UsuarioRol>(this);
 
   @OneToMany(() => RolPermiso, permiso => permiso.rol)
   permisos = new Collection<RolPermiso>(this);

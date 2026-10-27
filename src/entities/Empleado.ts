@@ -1,8 +1,7 @@
 import { DomainValidationError } from '../errors/domain-validation.error';
 import { Entity, PrimaryKey, Property, ManyToOne, Rel, BeforeCreate, BeforeUpdate, wrap } from '@mikro-orm/core';
-import { User } from './User';
 import { Administracion } from './Administracion';
-import { Rol } from './Rol';
+import { UsuarioRol } from './UsuarioRol';
 
 import { AmbitoRol } from './AmbitoRol';
 
@@ -11,14 +10,11 @@ export class Empleado {
   @PrimaryKey()
   id!: number;
 
-  @ManyToOne(() => User)
-  usuario!: Rel<User>;
+  @ManyToOne(() => UsuarioRol)
+  usuarioRol!: Rel<UsuarioRol>;
 
   @ManyToOne(() => Administracion)
   administracion!: Rel<Administracion>;
-
-  @ManyToOne(() => Rol)
-  rol!: Rel<Rol>;
 
   @Property()
   beginAt: Date = new Date();
@@ -31,11 +27,14 @@ export class Empleado {
     if (this.endAt !== null && this.endAt < this.beginAt) {
       throw new DomainValidationError('La fecha de fin no puede ser anterior a la fecha de inicio.');
     }
-    // Las referencias obtenidas con getReference pueden no tener el ambito cargado.
-    if (!wrap(this.rol).isInitialized()) {
-      await wrap(this.rol).init();
+    // Las referencias obtenidas con getReference pueden no tener el rol cargado.
+    if (!wrap(this.usuarioRol).isInitialized()) {
+      await wrap(this.usuarioRol).init();
     }
-    if (this.rol.ambito !== AmbitoRol.ADMINISTRACION) {
+    if (!wrap(this.usuarioRol.rol).isInitialized()) {
+      await wrap(this.usuarioRol.rol).init();
+    }
+    if (this.usuarioRol.rol.ambito !== AmbitoRol.ADMINISTRACION) {
       throw new DomainValidationError('El rol debe pertenecer al ambito ADMINISTRACION.');
     }
   }

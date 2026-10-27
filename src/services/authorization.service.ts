@@ -143,15 +143,25 @@ export const loadAuthorizationContext = async (
   const vigencia = { beginAt: { $lte: now }, $or: [{ endAt: null }, { endAt: { $gt: now } }] };
   const [globales, propiedades, empleos] = await Promise.all([
     em.find(UsuarioRol, { usuario: id, rol: { ambito: AmbitoRol.GLOBAL }, ...vigencia }, { populate: ['rol'] }),
-    em.find(UsuarioRolPropiedad, { usuario: id, rol: { ambito: AmbitoRol.PROPIEDAD }, ...vigencia }, { populate: ['rol', 'propiedad.edificio'] }),
-    em.find(Empleado, { usuario: id, rol: { ambito: AmbitoRol.ADMINISTRACION }, ...vigencia }, { populate: ['rol', 'administracion'] }),
+    em.find(UsuarioRolPropiedad, {
+      usuarioRol: { usuario: id, rol: { ambito: AmbitoRol.PROPIEDAD }, ...vigencia }, ...vigencia,
+    }, { populate: ['usuarioRol.rol', 'propiedad.edificio'] }),
+    em.find(Empleado, {
+      usuarioRol: { usuario: id, rol: { ambito: AmbitoRol.ADMINISTRACION }, ...vigencia }, ...vigencia,
+    }, { populate: ['usuarioRol.rol', 'administracion'] }),
   ]);
   const activeGlobals = globales.filter(item => isActiveAssignment(item, now) && item.rol?.ambito === AmbitoRol.GLOBAL);
-  const activeProperties = propiedades.filter(item => isActiveAssignment(item, now) && item.rol?.ambito === AmbitoRol.PROPIEDAD &&
+  const activeProperties = propiedades.filter(item => isActiveAssignment(item, now) && item.usuarioRol &&
+    isActiveAssignment(item.usuarioRol, now) && item.usuarioRol.rol?.ambito === AmbitoRol.PROPIEDAD &&
     item.propiedad?.edificio && !item.propiedad.edificio.deletedAt);
-  const activeJobs = empleos.filter(item => isActiveAssignment(item, now) && item.rol?.ambito === AmbitoRol.ADMINISTRACION &&
+  const activeJobs = empleos.filter(item => isActiveAssignment(item, now) && item.usuarioRol &&
+    isActiveAssignment(item.usuarioRol, now) && item.usuarioRol.rol?.ambito === AmbitoRol.ADMINISTRACION &&
     item.administracion && !item.administracion.deletedAt);
-  const roleIds = [...new Set([...activeGlobals, ...activeProperties, ...activeJobs].map(item => item.rol.id))];
+  const roleIds = [...new Set([
+    ...activeGlobals.map(item => item.rol.id),
+    ...activeProperties.map(item => item.usuarioRol.rol.id),
+    ...activeJobs.map(item => item.usuarioRol.rol.id),
+  ])];
   if (roleIds.length === 0) return context;
   const administrationIds = [...new Set(activeJobs.map(item => item.administracion.id))];
   const [permissions, managements] = await Promise.all([
@@ -168,16 +178,16 @@ export const loadAuthorizationContext = async (
     permisos: isSystemAdminRole(item.rol) ? getDefaultRolePermissions(CodigoRol.SUPERADMIN) : permissionsFor(item.rol.id),
   });
   for (const item of activeProperties) context.grants.push({
-    rolId: item.rol.id, rolCodigo: item.rol.codigo ?? null, ambito: AmbitoRol.PROPIEDAD,
-    propiedadId: item.propiedad.id, edificioIds: [item.propiedad.edificio.id], permisos: permissionsFor(item.rol.id),
+    rolId: item.usuarioRol.rol.id, rolCodigo: item.usuarioRol.rol.codigo ?? null, ambito: AmbitoRol.PROPIEDAD,
+    propiedadId: item.propiedad.id, edificioIds: [item.propiedad.edificio.id], permisos: permissionsFor(item.usuarioRol.rol.id),
   });
   for (const item of activeJobs) context.grants.push({
-    rolId: item.rol.id, rolCodigo: item.rol.codigo ?? null, ambito: AmbitoRol.ADMINISTRACION,
+    rolId: item.usuarioRol.rol.id, rolCodigo: item.usuarioRol.rol.codigo ?? null, ambito: AmbitoRol.ADMINISTRACION,
     administracionId: item.administracion.id,
     edificioIds: [...new Set(managements.filter(management => isActiveAssignment(management, now) &&
       management.administracion?.id === item.administracion.id && !management.administracion.deletedAt &&
       management.edificio && !management.edificio.deletedAt).map(management => management.edificio.id))],
-    permisos: permissionsFor(item.rol.id),
+    permisos: permissionsFor(item.usuarioRol.rol.id),
   });
   return context;
 };

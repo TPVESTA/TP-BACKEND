@@ -90,9 +90,9 @@ export async function seedRosario(entityManager: EntityManager) {
       Reservacion,
       Incidencia,
       UsuarioRolPropiedad,
+      Empleado,
       UsuarioRol,
       UsuarioAdministracion,
-      Empleado,
       AdminEdificio,
       RolPermiso,
       Unidad,
@@ -117,6 +117,20 @@ export async function seedRosario(entityManager: EntityManager) {
     const active = {
       beginAt: { $lte: now },
       $or: [{ endAt: null }, { endAt: { $gt: now } }],
+    };
+    const openRoles = new Map<string, UsuarioRol>();
+    const assignRole = async (usuario: User, rol: Rol): Promise<UsuarioRol> => {
+      const key = `${usuario.id}:${rol.id}`;
+      const cached = openRoles.get(key);
+      if (cached) return cached;
+      const created = await ensure(
+        em,
+        UsuarioRol,
+        { usuario: usuario.id, rol: rol.id, $or: [{ endAt: null }, { endAt: { $gt: now } }] },
+        () => Object.assign(new UsuarioRol(), { usuario, rol, beginAt: now }),
+      );
+      openRoles.set(key, created);
+      return created;
     };
     const localidad = await ensure(
       em,
@@ -298,19 +312,14 @@ export async function seedRosario(entityManager: EntityManager) {
     for (const [i, propiedad] of propiedades.entries()) {
       const usuario = propietarios[i % propietarios.length];
       const rol = roles.get(CodigoRol.PROPIETARIO)!;
+      const usuarioRol = await assignRole(usuario, rol);
       await ensure(
         em,
         UsuarioRolPropiedad,
-        {
-          usuario: usuario.id,
-          rol: rol.id,
-          propiedad: propiedad.id,
-          ...active,
-        },
+        { usuarioRol: usuarioRol.id, propiedad: propiedad.id, ...active },
         () =>
           Object.assign(new UsuarioRolPropiedad(), {
-            usuario,
-            rol,
+            usuarioRol,
             propiedad,
             beginAt: now,
           }),
@@ -323,19 +332,14 @@ export async function seedRosario(entityManager: EntityManager) {
           (i % buildings.length) * 10 + Math.floor(i / buildings.length)
         ];
       const rol = roles.get(CodigoRol.RESIDENTE)!;
+      const usuarioRol = await assignRole(usuario, rol);
       await ensure(
         em,
         UsuarioRolPropiedad,
-        {
-          usuario: usuario.id,
-          rol: rol.id,
-          propiedad: propiedad.id,
-          ...active,
-        },
+        { usuarioRol: usuarioRol.id, propiedad: propiedad.id, ...active },
         () =>
           Object.assign(new UsuarioRolPropiedad(), {
-            usuario,
-            rol,
+            usuarioRol,
             propiedad,
             beginAt: now,
           }),
@@ -364,37 +368,21 @@ export async function seedRosario(entityManager: EntityManager) {
         employee.index,
       );
       const rol = roles.get(employee.codigo)!;
+      const usuarioRol = await assignRole(usuario, rol);
       await ensure(
         em,
         Empleado,
-        {
-          usuario: usuario.id,
-          administracion: administracion.id,
-          rol: rol.id,
-          ...active,
-        },
+        { usuarioRol: usuarioRol.id, administracion: administracion.id, ...active },
         () =>
           Object.assign(new Empleado(), {
-            usuario,
+            usuarioRol,
             administracion,
-            rol,
             beginAt: now,
           }),
       );
     }
     const sysadmin = await user("Nicolás", "Administrador", "sysadmin", 18);
-    const globalRole = roles.get(CodigoRol.SUPERADMIN)!;
-    await ensure(
-      em,
-      UsuarioRol,
-      { usuario: sysadmin.id, rol: globalRole.id, ...active },
-      () =>
-        Object.assign(new UsuarioRol(), {
-          usuario: sysadmin,
-          rol: globalRole,
-          beginAt: now,
-        }),
-    );
+    await assignRole(sysadmin, roles.get(CodigoRol.SUPERADMIN)!);
 
     return {
       edificios: buildings.length,
