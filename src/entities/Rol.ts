@@ -9,9 +9,6 @@ export class Rol {
   @PrimaryKey()
   id!: number;
 
-  @Property()
-  nombre!: string;
-
   @Property({ type: 'string', nullable: true, unique: true })
   codigo: string | null = null;
 

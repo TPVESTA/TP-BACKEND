@@ -129,7 +129,6 @@ function loaderFixture() {
 
 test('el contexto carga permisos vigentes y no requiere un nombre literal de rol', async () => {
   const state = loaderFixture();
-  state.propertyAssignment.usuarioRol.rol.nombre = 'Nombre cambiado';
   const ctx = await loadAuthorizationContext(7, state.em);
   assert.equal(ctx.grants.length, 2);
   assert.equal(hasPermission(ctx, S.RESERVAS, A.CREAR, { propiedadId: 11 }), true);
@@ -185,9 +184,8 @@ test('usuarios inactivos y edificios o administraciones dados de baja no conserv
 
 test('SysAdmin global anterior recibe permisos completos y conserva la revocacion de su asignacion', async () => {
   for (const role of [
-    { codigo: CodigoRol.SUPERADMIN, nombre: 'Nombre cambiado' },
-    { codigo: 'SYSADMIN', nombre: 'Administrador del sistema' },
-    { codigo: null, nombre: ' SysAdmin ' },
+    { codigo: CodigoRol.SUPERADMIN },
+    { codigo: 'SYSADMIN' },
   ]) {
     const state = loaderFixture();
     const assignment = { beginAt: new Date(Date.now() - 60_000), endAt: null,
@@ -212,7 +210,7 @@ test('SysAdmin global anterior recibe permisos completos y conserva la revocacio
 test('un rol global comun no recibe privilegios de SysAdmin por su ambito', async () => {
   const state = loaderFixture();
   state.rows.set(UsuarioRol, [{ beginAt: new Date(Date.now() - 60_000), endAt: null,
-    rol: { id: 90, codigo: null, nombre: 'Operador', ambito: AmbitoRol.GLOBAL } }]);
+    rol: { id: 90, codigo: null, descripcion: 'Operador', ambito: AmbitoRol.GLOBAL } }]);
   assert.equal(hasPermission(await loadAuthorizationContext(7, state.em), S.ROLES, A.EDITAR), false);
 });
 
@@ -263,7 +261,7 @@ test('la matriz inicial conserva las diferencias entre roles y las operaciones e
 test('el seed no reconoce nombres arbitrarios y no repone permisos revocados al reiniciar', async () => {
   const state = seedFixture();
   const legacy = new Rol();
-  Object.assign(legacy, { id: 900, nombre: 'Administrativo', ambito: AmbitoRol.ADMINISTRACION });
+  Object.assign(legacy, { id: 900, descripcion: 'Administrativo', ambito: AmbitoRol.ADMINISTRACION });
   state.records.get(Rol).push(legacy);
   await seedDefaultPermissions(state.em, '');
   assert.equal(state.records.get(Rol).length, 6);

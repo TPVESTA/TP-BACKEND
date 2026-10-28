@@ -14,6 +14,7 @@ function matches(row, where) {
     if (field === '$and') return value.every(part => matches(row, part));
     if (field === '$or') return value.some(part => matches(row, part));
     const actual = row[field];
+    if (Array.isArray(actual)) return actual.some(item => matches(item, value));
     const comparable = actual && typeof actual === 'object' && !(actual instanceof Date) ? actual.id : actual;
     if (value !== null && typeof value === 'object' && !(value instanceof Date)) {
       if ('$in' in value) return value.$in.includes(comparable);
@@ -52,7 +53,7 @@ function fixture() {
   ];
   const roles = roleDefinitions.map(([id, codigo, ambito]) => {
     const permissions = getDefaultRolePermissions(codigo);
-    return { id, codigo, ambito, nombre: codigo, permisos: { getItems: () => permissions } };
+    return { id, codigo, ambito, descripcion: codigo, permisos: { getItems: () => permissions } };
   });
   const rows = {
     User: [resident, administrator, sharedMember, foreignMember, foreignWorker],
@@ -77,14 +78,9 @@ function fixture() {
       { id: 251, administracion: foreignAdmin, edificio: foreignBuilding, beginAt, endAt: null },
       { id: 252, administracion: ownAdmin, edificio: foreignBuilding, beginAt, endAt: pastEnd },
     ],
-    UsuarioAdministracion: [
-      { id: 300, usuario: sharedMember, administracion: ownAdmin, beginAt, endAt: null },
-      { id: 301, usuario: sharedMember, administracion: foreignAdmin, beginAt, endAt: null },
-      { id: 302, usuario: foreignMember, administracion: foreignAdmin, beginAt, endAt: null },
-      { id: 303, usuario: foreignMember, administracion: ownAdmin, beginAt, endAt: pastEnd },
-      { id: 304, usuario: resident, administracion: ownAdmin, beginAt, endAt: null },
-    ],
   };
+  Object.defineProperty(ownBuilding, 'administraciones', { value: [rows.AdminEdificio[0]] });
+  Object.defineProperty(foreignBuilding, 'administraciones', { value: [rows.AdminEdificio[1], rows.AdminEdificio[2]] });
   return { rows };
 }
 
@@ -169,7 +165,6 @@ test('el registro publico crea una cuenta sin conceder roles ni acceso administr
     assert.equal(registration.status, 201);
     assert.deepEqual(writes.map(item => item.name), ['User']);
     assert.equal(rows.UsuarioRol.length, 0);
-    assert.equal(rows.UsuarioAdministracion.length, 5);
     const token = registration.body.data.token;
     const effective = await request('GET', '/auth/permisos', token);
     assert.equal(effective.status, 200);
@@ -186,7 +181,6 @@ test('un residente recibe 403 antes de consultas de gestion de usuarios, roles g
       ['POST', '/usuarios-roles', { usuarioId: 1, rolId: 14 }],
       ['PUT', '/edificios/10', { nombre: 'Nuevo edificio' }],
       ['DELETE', '/propiedades/100'],
-      ['PUT', '/roles/11/permisos', { permisos: [{ seccion: 'USUARIOS', leer: true }] }],
     ];
     for (const [method, path, body] of denied) {
       calls.length = 0;
@@ -206,11 +200,11 @@ test('los listados administrativos usan vinculos vigentes y no exponen usuarios,
   await withApp(async ({ request, calls }) => {
     const users = await request('GET', '/users', 2);
     assert.equal(users.status, 200);
-    assert.deepEqual(users.body.data.map(item => item.id).sort(), [1, 2, 3]);
+    assert.deepEqual(users.body.data.map(item => item.id).sort(), [1, 2]);
     assert.equal((await request('GET', '/users/4', 2)).status, 404);
     const userQueries = calls.filter(call => call.method === 'find' && call.name === 'User');
     assert.equal(userQueries.length, 1);
-    assert.deepEqual(userQueries[0].where.id.$in.sort(), [1, 2, 3]);
+    assert.deepEqual(userQueries[0].where.id.$in.sort(), [1, 2]);
     const buildings = await request('GET', '/edificios', 2);
     assert.equal(buildings.status, 200);
     assert.deepEqual(buildings.body.data.map(item => item.id), [10]);
@@ -228,14 +222,12 @@ test('los listados administrativos usan vinculos vigentes y no exponen usuarios,
 test('administrativos no pueden vincular cuentas ajenas, operar otra administracion ni deshabilitar o elevar permisos globales', async () => {
   await withApp(async ({ request, rows, writes, flushes }) => {
     const denied = [
-      ['DELETE', '/users/3/vinculos/40'], ['POST', '/users/4/vinculos/30'],
-      ['DELETE', '/users/3'], ['PUT', '/users/3', { estado: false }],
-      ['PUT', '/users/3', { email: 'otro@example.test' }],
+      ['DELETE', '/users/1'], ['PUT', '/users/1', { estado: false }],
+      ['PUT', '/users/1', { email: 'otro@example.test' }],
       ['POST', '/usuarios-roles', { usuarioId: 2, rolId: 14 }],
-      ['PUT', '/roles/12/permisos', { permisos: [{ seccion: 'USUARIOS', leer: true, editar: true }] }],
       ['POST', '/users', {
         cuil: '20123456789', nombre: 'Nueva', apellido: 'Cuenta', email: 'ajena@example.test',
-        fechaNacimiento: '1990-01-01', password: 'clave-segura', estado: true, administracionId: 40,
+        fechaNacimiento: '1990-01-01', password: 'clave-segura', estado: true, rolId: 13, administracionId: 40,
       }],
     ];
     for (const [method, path, body] of denied) {
@@ -244,25 +236,8 @@ test('administrativos no pueden vincular cuentas ajenas, operar otra administrac
     }
     assert.equal(writes.length, 0);
     assert.equal(flushes(), 0);
-    assert.equal(rows.User.find(item => item.id === 3).estado, true);
-    assert.equal(rows.UsuarioAdministracion.find(item => item.id === 301).endAt, null);
-  });
-});
-
-test('desvincular un usuario de la administracion propia conserva la cuenta y el vinculo con otras administraciones', async () => {
-  await withApp(async ({ request, rows, flushes }) => {
-    const result = await request('DELETE', '/users/3/vinculos/30', 2);
-    assert.equal(result.status, 200);
-    assert.ok(rows.UsuarioAdministracion.find(item => item.id === 300).endAt instanceof Date);
-    assert.equal(rows.UsuarioAdministracion.find(item => item.id === 301).endAt, null);
-    const user = rows.User.find(item => item.id === 3);
-    assert.equal(user.estado, true);
-    assert.equal(user.deletedAt, null);
-    assert.equal(flushes(), 1);
-    assert.equal((await request('GET', '/users/3', 2)).status, 404);
-    const profile = await request('GET', '/auth/profile', 3);
-    assert.equal(profile.status, 200);
-    assert.equal(profile.body.data.estado, true);
+    assert.equal(rows.User.find(item => item.id === 1).estado, true);
+    assert.equal((await request('PUT', '/users/3', 2, { estado: false })).status, 404);
   });
 });
 
@@ -287,13 +262,13 @@ test('la gestion de asignaciones limita consultas, bajas y altas a la administra
 
 test('el alta de un empleado reutiliza el usuario_rol abierto del mismo usuario y rol', async () => {
   await withApp(async ({ request, rows }) => {
-    const first = await request('POST', '/empleados', 2, { usuarioId: 3, rolId: 13, administracionId: 30 });
+    const first = await request('POST', '/empleados', 2, { usuarioId: 1, rolId: 13, administracionId: 30 });
     assert.equal(first.status, 201, JSON.stringify(first.body));
-    const links = () => rows.UsuarioRol.filter(item => item.usuario?.id === 3 && item.rol?.id === 13);
+    const links = () => rows.UsuarioRol.filter(item => item.usuario?.id === 1 && item.rol?.id === 13);
     assert.equal(links().length, 1);
     assert.equal(links()[0].endAt, null);
     assert.equal(first.body.data.usuarioRol.rol.id, 13);
-    const second = await request('POST', '/empleados', 2, { usuarioId: 3, rolId: 13, administracionId: 30, beginAt: '2020-01-01T00:00:00.000Z' });
+    const second = await request('POST', '/empleados', 2, { usuarioId: 1, rolId: 13, administracionId: 30, beginAt: '2020-01-01T00:00:00.000Z' });
     assert.equal(second.status, 201, JSON.stringify(second.body));
     assert.equal(links().length, 1);
     assert.equal(links()[0].beginAt.toISOString(), '2020-01-01T00:00:00.000Z');

@@ -16,7 +16,6 @@ import { RolPermiso } from "../../entities/RolPermiso";
 import { TipoUnidad } from "../../entities/TipoUnidad";
 import { Unidad } from "../../entities/Unidad";
 import { User } from "../../entities/User";
-import { UsuarioAdministracion } from "../../entities/UsuarioAdministracion";
 import { UsuarioRol } from "../../entities/UsuarioRol";
 import { UsuarioRolPropiedad } from "../../entities/UsuarioRolPropiedad";
 import { seedDefaultPermissions } from "../../services/permission-seed.service";
@@ -92,7 +91,6 @@ export async function seedRosario(entityManager: EntityManager) {
       UsuarioRolPropiedad,
       Empleado,
       UsuarioRol,
-      UsuarioAdministracion,
       AdminEdificio,
       RolPermiso,
       Unidad,
@@ -147,11 +145,14 @@ export async function seedRosario(entityManager: EntityManager) {
       Administracion,
       { cuit: fiscalId(30, 71990000) },
       () =>
-        new Administracion(
-          fiscalId(30, 71990000),
-          "Administración Rosario Centro",
-          "administracion@rosario.example",
-          "San Lorenzo 1450, Rosario",
+        Object.assign(
+          new Administracion(
+            fiscalId(30, 71990000),
+            "Administración Rosario Centro",
+            "administracion@rosario.example",
+            "San Lorenzo 1450",
+          ),
+          { localidad },
         ),
     );
     const departamento = await ensure(
@@ -280,20 +281,6 @@ export async function seedRosario(entityManager: EntityManager) {
         );
         account.cuil = fiscalId(20, 30000000 + index);
         await em.persistAndFlush(account);
-      }
-      // Permite al administrativo ver y gestionar las cuentas de esta administración.
-      if (alias !== "sysadmin") {
-        await ensure(
-          em,
-          UsuarioAdministracion,
-          { usuario: account.id, administracion: administracion.id, ...active },
-          () =>
-            Object.assign(new UsuarioAdministracion(), {
-              usuario: account!,
-              administracion,
-              beginAt: now,
-            }),
-        );
       }
       return account;
     }

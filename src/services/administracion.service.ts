@@ -2,13 +2,15 @@ import { AuthorizationContext } from './authorization.service';
 import { AccionPermiso } from '../entities/Permiso';
 import { administrationWhere, requireGlobalStructure } from './structure-authorization.helper';
 import { Administracion } from '../entities/Administracion';
-import { EntityId, getEntityManager, parseId } from './service.helper';
+import { Localidad } from '../entities/Localidad';
+import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
 
 export interface CreateAdministracionData {
   cuit: string;
   nombre: string;
   email: string;
   direccion: string;
+  localidadId: EntityId;
 }
 
 export type UpdateAdministracionData = Partial<CreateAdministracionData>;
@@ -16,13 +18,13 @@ export type UpdateAdministracionData = Partial<CreateAdministracionData>;
 export const getAllAdministraciones = async (context: AuthorizationContext): Promise<Administracion[]> => {
   const scope = administrationWhere<Administracion>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.find(Administracion, scope);
+  return em.find(Administracion, scope, { populate: ['localidad'] });
 };
 
 export const getAdministracionById = async (id: EntityId, context: AuthorizationContext): Promise<Administracion | null> => {
   const scope = administrationWhere<Administracion>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.findOne(Administracion, { $and: [{ id: parseId(id) }, scope] });
+  return em.findOne(Administracion, { $and: [{ id: parseId(id) }, scope] }, { populate: ['localidad'] });
 };
 
 export const createAdministracion = async (data: CreateAdministracionData, context: AuthorizationContext): Promise<Administracion> => {
@@ -33,6 +35,7 @@ export const createAdministracion = async (data: CreateAdministracionData, conte
   entity.nombre = data.nombre;
   entity.email = data.email;
   entity.direccion = data.direccion;
+  entity.localidad = await requireEntity(em, Localidad, data.localidadId, 'Localidad');
   await em.persistAndFlush(entity);
   return entity;
 };
@@ -46,6 +49,7 @@ export const updateAdministracion = async (id: EntityId, data: UpdateAdministrac
   if (data.nombre !== undefined) entity.nombre = data.nombre;
   if (data.email !== undefined) entity.email = data.email;
   if (data.direccion !== undefined) entity.direccion = data.direccion;
+  if (data.localidadId !== undefined) entity.localidad = await requireEntity(em, Localidad, data.localidadId, 'Localidad');
   await em.persistAndFlush(entity);
   return entity;
 };

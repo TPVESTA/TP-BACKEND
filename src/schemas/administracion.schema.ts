@@ -1,10 +1,11 @@
-import { createSchema, updateSchema, identificacionFiscalSchema, nombreSchema, emailSchema, textoCortoSchema } from './common.schema';
+import { createSchema, updateSchema, identificacionFiscalSchema, nombreSchema, emailSchema, textoCortoSchema, idSchema } from './common.schema';
 
 const fields = {
   cuit: identificacionFiscalSchema,
   nombre: nombreSchema,
   email: emailSchema,
-  direccion: textoCortoSchema
+  direccion: textoCortoSchema,
+  localidadId: idSchema
 };
 
 export const createAdministracionSchema = createSchema(fields);

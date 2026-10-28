@@ -28,15 +28,8 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
 };
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const adminId = req.params.administracionId;
-    const user = await service.deleteUser(String(req.params.id), requireAuthorization(req), adminId === undefined ? undefined : String(adminId));
-    if (!user) { ResponseHelper.notFound(res, 'Usuario o vínculo no encontrado'); return; }
-    ResponseHelper.success(res, user, adminId === undefined ? 'Cuenta dada de baja' : 'Vínculo con la administración finalizado');
+    const user = await service.deleteUser(String(req.params.id), requireAuthorization(req));
+    if (!user) { ResponseHelper.notFound(res, 'Usuario no encontrado'); return; }
+    ResponseHelper.success(res, user, 'Cuenta dada de baja');
   } catch (error) { handleControllerError(res, error, 'deleteUser'); }
-};
-export const linkAdministration = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const link = await service.linkUserAdministration(String(req.params.id), String(req.params.administracionId), requireAuthorization(req));
-    ResponseHelper.created(res, link, 'Usuario vinculado a la administración');
-  } catch (error) { handleControllerError(res, error, 'linkAdministration'); }
 };

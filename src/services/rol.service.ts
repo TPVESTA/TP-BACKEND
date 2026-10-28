@@ -14,7 +14,6 @@ const roleFilter = (ctx: AuthorizationContext) => {
 };
 
 export interface CreateRolData {
-  nombre: string;
   descripcion: string;
   ambito: AmbitoRol;
 }
@@ -35,7 +34,6 @@ export const createRol = async (data: CreateRolData, ctx: AuthorizationContext):
   requireGlobal(ctx, S.ROLES, A.CREAR);
   const em = getEntityManager();
   const entity = new Rol();
-  entity.nombre = data.nombre;
   entity.descripcion = data.descripcion;
   entity.ambito = data.ambito;
   await em.persistAndFlush(entity);
@@ -50,7 +48,6 @@ export const updateRol = async (id: EntityId, data: UpdateRolData, ctx: Authoriz
   if (data.ambito !== undefined && data.ambito !== entity.ambito) {
     throw new DomainValidationError('El ambito de un rol existente no se puede cambiar; cree otro rol.');
   }
-  if (data.nombre !== undefined) entity.nombre = data.nombre;
   if (data.descripcion !== undefined) entity.descripcion = data.descripcion;
   if (data.ambito !== undefined) entity.ambito = data.ambito;
   await em.persistAndFlush(entity);
