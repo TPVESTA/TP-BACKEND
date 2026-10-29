@@ -1,9 +1,9 @@
 # API Express Demo - UTN (TypeScript)
 
 > La referencia actual de endpoints, autenticacion y ejemplos esta en [RUTAS.md](RUTAS.md).
+> Para cargar usuarios, edificios y roles de prueba, ver [SEED.md](SEED.md). El comando `npm run seed` reemplaza los datos existentes.
+> La exclusividad por área y día, los conflictos 409 y las pruebas de concurrencia se documentan en [RESERVAS.md](RESERVAS.md).
 > Las rutas CRUD usan el prefijo `/api` y requieren token. Algunos ejemplos historicos de este README describen la version inicial.
-
-> Datos de prueba de Rosario: ejecutar `npm run seed`. Ver edificios, usuarios y credenciales en [SEED.md](SEED.md).
 
 Este proyecto es una demostración de cómo crear una API REST con Node.js, Express, TypeScript y MikroORM con persistencia en MySQL.
 

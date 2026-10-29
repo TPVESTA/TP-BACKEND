@@ -3,6 +3,7 @@ import { ForeignKeyConstraintViolationException, UniqueConstraintViolationExcept
 import { DomainValidationError } from '../errors/domain-validation.error';
 import { ResponseHelper } from './response.helper';
 import { AuthorizationError } from '../errors/authorization.error';
+import { ConflictError } from '../errors/conflict.error';
 
 // Solo comprueba la estructura; las reglas de cada campo corresponden a Joi.
 export const requireObjectBody = (body: unknown): void => {
@@ -12,6 +13,10 @@ export const requireObjectBody = (body: unknown): void => {
 };
 
 export const handleControllerError = (res: Response, error: unknown, operation: string): void => {
+  if (error instanceof ConflictError) {
+    ResponseHelper.error(res, error.message, 409);
+    return;
+  }
   if (error instanceof AuthorizationError) {
     ResponseHelper.error(res, error.message, 403);
     return;

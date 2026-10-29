@@ -107,6 +107,8 @@ Desktop.ini
 !/tests/business-permissions.test.cjs
 !/tests/structure-permissions.test.cjs
 !/tests/permissions-routes.test.cjs
+!/tests/reservacion-availability.test.cjs
+!/tests/reservacion-mysql.test.cjs
 
 
 /Entidades.md

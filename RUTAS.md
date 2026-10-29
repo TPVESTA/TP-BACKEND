@@ -90,6 +90,10 @@ cualquier usuario autenticado activo.
 
 ## Verificacion
 
+Las altas y modificaciones de reservas verifican exclusividad por área común y
+día de Buenos Aires. Un destino ocupado responde 409. Ver las reglas y pruebas
+en [RESERVAS.md](RESERVAS.md).
+
 `npx tsc --noEmit --pretty false` y `npm test`.
 Las pruebas de rutas usan Express, JWT, middlewares, schemas y controladores
 reales, sustituyendo los servicios de datos. Comprueban los 65 endpoints
