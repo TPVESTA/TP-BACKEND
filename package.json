@@ -8,8 +8,9 @@
     "start": "node dist/app.js",
     "dev": "ts-node src/app.ts",
     "dev:watch": "nodemon --exec ts-node src/app.ts",
-    "seed": "ts-node src/database/seed.ts",
-    "test": "node --test tests/*.test.cjs"
+    "test": "node --test tests/*.test.cjs",
+    "test:reservas": "node --test tests/business-permissions.test.cjs tests/reservacion-availability.test.cjs",
+    "test:reservas:mysql": "node --test tests/reservacion-mysql.test.cjs"
   },
   "keywords": [
     "express",

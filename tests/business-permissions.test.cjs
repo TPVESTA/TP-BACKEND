@@ -56,6 +56,7 @@ async function withEM(records, run) {
   const original = manager.getORM;
   const queries = [], persisted = [];
   const em = {
+    transactional: async callback => callback(em),
     find: async (entity, where) => { queries.push({ entity, where }); return (records.get(entity) ?? []).filter(item => matches(item, where)); },
     findOne: async (entity, where) => { queries.push({ entity, where }); return (records.get(entity) ?? []).find(item => matches(item, where)) ?? null; },
     persistAndFlush: async item => { persisted.push(item); },
@@ -148,7 +149,7 @@ test('crear reserva exige edificio permitido y fija usuario y propiedad; context
 
 test('reservas propias pueden cancelarse; administrativo puede editar otras y no moverlas fuera de su ámbito', async () => {
   const item = reservation();
-  await withEM(new Map([[Reservacion, [item]], [AreaComun, [area(201, 11)]]]), async ({ persisted }) => {
+  await withEM(new Map([[Reservacion, [item]], [AreaComun, [area(), area(201, 11)]]]), async ({ persisted }) => {
     assert.equal(await reservations.updateReservacion(500, { descripcion: 'Gestionada' }, administrative()), item);
     await assert.rejects(reservations.updateReservacion(500, { areaComunId: 201, descripcion: 'Cambio inseguro' }, administrative()), /edificio/);
     assert.equal(item.descripcion, 'Gestionada');

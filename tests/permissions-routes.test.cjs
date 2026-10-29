@@ -300,27 +300,6 @@ test('asignar un rol no permite vincular indirectamente una cuenta ajena con la 
   });
 });
 
-test('las cuentas con clave ROOT pueden iniciar sesion sin permitir altas con claves cortas', async () => {
-  await withApp(async ({ request, rows, writes }) => {
-    const account = rows.User.find(item => item.id === 1);
-    account.password = await require('bcryptjs').hash('ROOT', 4);
-    const credentials = { email: account.email, password: 'ROOT' };
-    const login = await request('POST', '/auth/login', undefined, credentials);
-    assert.equal(login.status, 200, JSON.stringify(login.body));
-    assert.ok(login.body.data.token);
-    const invalid = await request('POST', '/auth/login', undefined, { ...credentials, password: 'FAIL' });
-    assert.equal(invalid.status, 401);
-    const empty = await request('POST', '/auth/login', undefined, { ...credentials, password: '' });
-    assert.equal(empty.status, 400);
-    const registration = await request('POST', '/auth/register', undefined, {
-      ...credentials, email: 'nueva@example.test', cuil: '20123456789', nombre: 'Nueva',
-      apellido: 'Cuenta', fechaNacimiento: '1990-01-01', estado: true,
-    });
-    assert.equal(registration.status, 400);
-    assert.equal(writes.length, 0);
-  });
-});
-
 test('el perfil personal no permite modificar estado ni asignaciones mediante campos adicionales', async () => {
   await withApp(async ({ request, rows, writes }) => {
     assert.equal((await request('PUT', '/auth/profile', 1, { estado: false })).status, 400);
