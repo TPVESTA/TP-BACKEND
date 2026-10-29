@@ -6,6 +6,11 @@ Con MySQL disponible y las variables `DB_*` configuradas en `.env`, ejecutar:
 npm run seed
 ```
 
+En PowerShell, si aparece que `npm.ps1` tiene la ejecución de scripts
+deshabilitada, usar `npm.cmd run seed`. No hace falta modificar la política de
+ejecución de Windows. Para iniciar la API en esa terminal, usar
+`npm.cmd run dev:watch`.
+
 El comando prepara las tablas sin eliminar tablas ni columnas, **borra todos los datos anteriores de la aplicación** y carga únicamente estos datos ficticios y sus roles y permisos iniciales:
 
 - Rosario, Santa Fe, y la Administración Rosario Centro.
