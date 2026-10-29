@@ -10,7 +10,7 @@ const { parseId } = require('../src/services/service.helper');
 const specs = [
   {"file":"localidad","name":"Localidad","plural":"Localidades","fields":{"nombre":"string","provincia":"string"}},
   {"file":"tipo-unidad","name":"TipoUnidad","plural":"TiposUnidad","fields":{"nombre":"string","ambito":"AmbitoUnidad"}},
-  {"file":"rol","name":"Rol","plural":"Roles","fields":{"nombre":"string","descripcion":"string","ambito":"AmbitoRol"}},
+  {"file":"rol","name":"Rol","plural":"Roles","fields":{"descripcion":"string","ambito":"AmbitoRol"}},
   {"file":"administracion","name":"Administracion","plural":"Administraciones","fields":{"cuit":"string","nombre":"string","email":"string","direccion":"string"},"soft":true},
   {"file":"edificio","name":"Edificio","plural":"Edificios","fields":{"cuit":"string","nombre":"string","direccion":"string"},"rels":{"localidad":"Localidad"},"soft":true},
   {"file":"propiedad","name":"Propiedad","plural":"Propiedades","fields":{"nroUnidad":"string","mtCuadrados":"number","descripcion":"string","copropiedad":"number","habitaciones":"number"},"rels":{"edificio":"Edificio","tipoUnidad":"TipoUnidad"}},

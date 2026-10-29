@@ -100,8 +100,14 @@ function loaderFixture() {
   const employeeRole = { id: 2, codigo: CodigoRol.MANTENIMIENTO, ambito: AmbitoRol.ADMINISTRACION };
   const building = { id: 100, deletedAt: null };
   const administration = { id: 2, deletedAt: null };
-  const propertyAssignment = { beginAt: past, endAt: null, rol: propertyRole, propiedad: { id: 11, edificio: building } };
-  const job = { beginAt: past, endAt: null, rol: employeeRole, administracion: administration };
+  const propertyAssignment = {
+    beginAt: past, endAt: null, propiedad: { id: 11, edificio: building },
+    usuarioRol: { beginAt: past, endAt: null, rol: propertyRole, usuario: { id: 7 } },
+  };
+  const job = {
+    beginAt: past, endAt: null, administracion: administration,
+    usuarioRol: { beginAt: past, endAt: null, rol: employeeRole, usuario: { id: 7 } },
+  };
   const management = { beginAt: past, endAt: null, administracion: administration, edificio: building };
   const permissions = [
     { rol: propertyRole, ...permission(S.RESERVAS, { crear: true }) },
@@ -123,15 +129,21 @@ function loaderFixture() {
 
 test('el contexto carga permisos vigentes y no requiere un nombre literal de rol', async () => {
   const state = loaderFixture();
-  state.propertyAssignment.rol.nombre = 'Nombre cambiado';
   const ctx = await loadAuthorizationContext(7, state.em);
   assert.equal(ctx.grants.length, 2);
   assert.equal(hasPermission(ctx, S.RESERVAS, A.CREAR, { propiedadId: 11 }), true);
   assert.equal(hasPermission(ctx, S.INCIDENCIAS, A.CAMBIAR_ESTADO, { edificioId: 100 }), true);
   assert.equal(hasPermission(ctx, S.INCIDENCIAS, A.CAMBIAR_ESTADO, { edificioId: 101 }), false);
-  for (const entity of [UsuarioRol, UsuarioRolPropiedad, Empleado]) {
-    const query = state.queries.find(query => query.entity === entity);
-    assert.equal(query.where.usuario, 7);
+  const globalQuery = state.queries.find(query => query.entity === UsuarioRol);
+  assert.equal(globalQuery.where.usuario, 7);
+  assert.equal(globalQuery.where.rol.ambito, AmbitoRol.GLOBAL);
+  const propertyQuery = state.queries.find(query => query.entity === UsuarioRolPropiedad);
+  assert.equal(propertyQuery.where.usuarioRol.usuario, 7);
+  assert.equal(propertyQuery.where.usuarioRol.rol.ambito, AmbitoRol.PROPIEDAD);
+  const jobQuery = state.queries.find(query => query.entity === Empleado);
+  assert.equal(jobQuery.where.usuarioRol.usuario, 7);
+  assert.equal(jobQuery.where.usuarioRol.rol.ambito, AmbitoRol.ADMINISTRACION);
+  for (const query of [globalQuery, propertyQuery, jobQuery]) {
     assert.ok(query.where.beginAt.$lte instanceof Date);
     assert.ok(query.where.$or);
   }
@@ -146,6 +158,9 @@ test('revocar una asignacion, permiso o gestion de edificio tiene efecto en la s
   assert.equal(hasPermission(afterMembershipRevocation, S.RESERVAS, A.CREAR, { propiedadId: 11 }), false);
   assert.equal(hasPermission(afterMembershipRevocation, S.INCIDENCIAS, A.CAMBIAR_ESTADO, { edificioId: 100 }), false);
   state.propertyAssignment.endAt = null;
+  state.propertyAssignment.usuarioRol.endAt = new Date(Date.now() - 1);
+  assert.equal(hasPermission(await loadAuthorizationContext(7, state.em), S.RESERVAS, A.CREAR, { propiedadId: 11 }), false);
+  state.propertyAssignment.usuarioRol.endAt = null;
   state.permissions[0].crear = false;
   assert.equal(hasPermission(await loadAuthorizationContext(7, state.em), S.RESERVAS, A.CREAR, { propiedadId: 11 }), false);
 });
@@ -169,9 +184,8 @@ test('usuarios inactivos y edificios o administraciones dados de baja no conserv
 
 test('SysAdmin global anterior recibe permisos completos y conserva la revocacion de su asignacion', async () => {
   for (const role of [
-    { codigo: CodigoRol.SUPERADMIN, nombre: 'Nombre cambiado' },
-    { codigo: 'SYSADMIN', nombre: 'Administrador del sistema' },
-    { codigo: null, nombre: ' SysAdmin ' },
+    { codigo: CodigoRol.SUPERADMIN },
+    { codigo: 'SYSADMIN' },
   ]) {
     const state = loaderFixture();
     const assignment = { beginAt: new Date(Date.now() - 60_000), endAt: null,
@@ -196,7 +210,7 @@ test('SysAdmin global anterior recibe permisos completos y conserva la revocacio
 test('un rol global comun no recibe privilegios de SysAdmin por su ambito', async () => {
   const state = loaderFixture();
   state.rows.set(UsuarioRol, [{ beginAt: new Date(Date.now() - 60_000), endAt: null,
-    rol: { id: 90, codigo: null, nombre: 'Operador', ambito: AmbitoRol.GLOBAL } }]);
+    rol: { id: 90, codigo: null, descripcion: 'Operador', ambito: AmbitoRol.GLOBAL } }]);
   assert.equal(hasPermission(await loadAuthorizationContext(7, state.em), S.ROLES, A.EDITAR), false);
 });
 
@@ -247,7 +261,7 @@ test('la matriz inicial conserva las diferencias entre roles y las operaciones e
 test('el seed no reconoce nombres arbitrarios y no repone permisos revocados al reiniciar', async () => {
   const state = seedFixture();
   const legacy = new Rol();
-  Object.assign(legacy, { id: 900, nombre: 'Administrativo', ambito: AmbitoRol.ADMINISTRACION });
+  Object.assign(legacy, { id: 900, descripcion: 'Administrativo', ambito: AmbitoRol.ADMINISTRACION });
   state.records.get(Rol).push(legacy);
   await seedDefaultPermissions(state.em, '');
   assert.equal(state.records.get(Rol).length, 6);

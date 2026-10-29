@@ -1,6 +1,7 @@
-import { Entity, PrimaryKey, Property, Filter, OneToMany, Collection } from '@mikro-orm/core';
+import { Entity, PrimaryKey, Property, Filter, ManyToOne, OneToMany, Collection, Rel } from '@mikro-orm/core';
 import { Empleado } from './Empleado';
 import { AdminEdificio } from './AdminEdificio';
+import { Localidad } from './Localidad';
 
 @Filter({ name: 'softDelete', cond: { deletedAt: null }, default: true })
 @Entity({ tableName: 'administracion' })
@@ -25,6 +26,9 @@ export class Administracion {
 
   @Property()
   direccion!: string;
+
+  @ManyToOne(() => Localidad)
+  localidad!: Rel<Localidad>;
 
   @OneToMany(() => Empleado, empleado => empleado.administracion)
   empleados = new Collection<Empleado>(this);

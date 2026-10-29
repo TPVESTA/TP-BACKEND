@@ -53,11 +53,11 @@ export const getDefaultRolePermissions = (codigo: string | null): PermissionDesc
 };
 
 const roles = [
-  { codigo: CodigoRol.RESIDENTE, nombre: 'Residente', ambito: AmbitoRol.PROPIEDAD },
-  { codigo: CodigoRol.PROPIETARIO, nombre: 'Propietario', ambito: AmbitoRol.PROPIEDAD },
-  { codigo: CodigoRol.MANTENIMIENTO, nombre: 'Mantenimiento', ambito: AmbitoRol.ADMINISTRACION },
-  { codigo: CodigoRol.ADMINISTRATIVO, nombre: 'Administrativo', ambito: AmbitoRol.ADMINISTRACION },
-  { codigo: CodigoRol.SUPERADMIN, nombre: 'Superadministrador', ambito: AmbitoRol.GLOBAL },
+  { codigo: CodigoRol.RESIDENTE, descripcion: 'Residente', ambito: AmbitoRol.PROPIEDAD },
+  { codigo: CodigoRol.PROPIETARIO, descripcion: 'Propietario', ambito: AmbitoRol.PROPIEDAD },
+  { codigo: CodigoRol.MANTENIMIENTO, descripcion: 'Mantenimiento', ambito: AmbitoRol.ADMINISTRACION },
+  { codigo: CodigoRol.ADMINISTRATIVO, descripcion: 'Administrativo', ambito: AmbitoRol.ADMINISTRACION },
+  { codigo: CodigoRol.SUPERADMIN, descripcion: 'Superadministrador', ambito: AmbitoRol.GLOBAL },
 ];
 
 export const seedDefaultPermissions = async (
@@ -70,8 +70,7 @@ export const seedDefaultPermissions = async (
     const rol = existing ?? new Rol();
     if (!existing) {
       rol.codigo = definition.codigo;
-      rol.nombre = definition.nombre;
-      rol.descripcion = `Rol inicial ${definition.nombre}`;
+      rol.descripcion = definition.descripcion;
       rol.ambito = definition.ambito;
     } else if (rol.ambito !== definition.ambito) {
       throw new DomainValidationError(`El rol ${definition.codigo} tiene un ambito incompatible con su configuracion inicial.`);

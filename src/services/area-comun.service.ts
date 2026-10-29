@@ -22,13 +22,13 @@ export type UpdateAreaComunData = Partial<CreateAreaComunData>;
 export const getAllAreasComunes = async (context: AuthorizationContext): Promise<AreaComun[]> => {
   const scope = commonAreaWhere<AreaComun>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.find(AreaComun, scope);
+  return em.find(AreaComun, scope, { populate: ['edificio', 'tipoUnidad'] });
 };
 
 export const getAreaComunById = async (id: EntityId, context: AuthorizationContext): Promise<AreaComun | null> => {
   const scope = commonAreaWhere<AreaComun>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.findOne(AreaComun, { $and: [{ id: parseId(id) }, scope] });
+  return em.findOne(AreaComun, { $and: [{ id: parseId(id) }, scope] }, { populate: ['edificio', 'tipoUnidad'] });
 };
 
 export const createAreaComun = async (data: CreateAreaComunData, context: AuthorizationContext): Promise<AreaComun> => {

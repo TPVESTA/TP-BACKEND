@@ -1,7 +1,7 @@
 import express from 'express';
 import * as userController from '../controllers/user.controller';
 import { validate } from '../middlewares/validate';
-import { createUserSchema, updateUserSchema, idParamSchema, userAdministrationParamsSchema } from '../schemas/user.schema';
+import { createUserSchema, updateUserSchema, idParamSchema } from '../schemas/user.schema';
 // La autenticación se aplica en routes/index.ts.
 
 const router: express.Router = express.Router();
@@ -20,7 +20,5 @@ router.put('/:id', validate({ location: 'params', schema: idParamSchema }), vali
 
 // DELETE /users/:id - Eliminar un usuario (requiere autenticación)
 router.delete('/:id', validate({ location: 'params', schema: idParamSchema }), userController.deleteUser);
-router.post('/:id/vinculos/:administracionId', validate({ location: 'params', schema: userAdministrationParamsSchema }), userController.linkAdministration);
-router.delete('/:id/vinculos/:administracionId', validate({ location: 'params', schema: userAdministrationParamsSchema }), userController.deleteUser);
 
 export default router;

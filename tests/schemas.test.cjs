@@ -29,7 +29,8 @@ const specs = [
       "cuit",
       "nombre",
       "email",
-      "direccion"
+      "direccion",
+      "localidadId"
     ]
   },
   {
@@ -46,7 +47,6 @@ const specs = [
     "file": "rol",
     "name": "Rol",
     "fields": [
-      "nombre",
       "descripcion",
       "ambito"
     ]
@@ -194,18 +194,20 @@ test('IDs solo aceptan enteros positivos seguros o digitos textuales', () => {
 test('usuarios: contrato real, false, fecha, formato fiscal, email y contrasena', () => {
   const data = { cuil: samples.cuil, nombre: ' Ana ', apellido: 'Perez', email: samples.email,
     fechaNacimiento: '2000-01-01', password: ' clave123 ', estado: false };
-  for (const schema of [user.createUserSchema, user.registerUserSchema]) {
-    const result = schema.validate(data, options);
-    assert.ifError(result.error);
-    assert.equal(result.value.nombre, 'Ana');
-    assert.equal(result.value.estado, false);
-    assert.equal(result.value.password, ' clave123 ');
-    assert.ok(result.value.fechaNacimiento instanceof Date);
-    for (const key of Object.keys(data)) {
-      const missing = { ...data }; delete missing[key];
-      assert.ok(schema.validate(missing, options).error, key);
-    }
+  const register = user.registerUserSchema.validate(data, options);
+  assert.ifError(register.error);
+  assert.equal(register.value.nombre, 'Ana');
+  assert.equal(register.value.estado, false);
+  assert.equal(register.value.password, ' clave123 ');
+  assert.ok(register.value.fechaNacimiento instanceof Date);
+  for (const key of Object.keys(data)) {
+    const missing = { ...data }; delete missing[key];
+    assert.ok(user.registerUserSchema.validate(missing, options).error, key);
   }
+  const created = user.createUserSchema.validate({ ...data, rolId: 1 }, options);
+  assert.ifError(created.error);
+  assert.equal(created.value.rolId, 1);
+  assert.ok(user.createUserSchema.validate(data, options).error);
   assert.ifError(user.updateUserSchema.validate({ estado: false }, options).error);
   assert.ok(user.updateUserSchema.validate({ name: 'Ana' }, options).error);
   for (const patch of [{ estado: 'false' }, { cuil: '12' }, { cuil: 20123456789 },

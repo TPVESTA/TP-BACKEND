@@ -1,10 +1,9 @@
 import Joi from 'joi';
 import { AmbitoRol } from '../entities/AmbitoRol';
 import { SeccionPermiso, AccionPermiso } from '../entities/Permiso';
-import { createSchema, updateSchema, nombreSchema, textoCortoSchema } from './common.schema';
+import { createSchema, updateSchema, textoCortoSchema } from './common.schema';
 
 const fields = {
-  nombre: nombreSchema,
   descripcion: textoCortoSchema,
   ambito: Joi.string().valid(...Object.values(AmbitoRol))
 };

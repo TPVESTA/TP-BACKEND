@@ -17,13 +17,13 @@ export type UpdateEdificioData = Partial<CreateEdificioData>;
 export const getAllEdificios = async (context: AuthorizationContext): Promise<Edificio[]> => {
   const scope = buildingWhere<Edificio>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.find(Edificio, scope);
+  return em.find(Edificio, scope, { populate: ['localidad'] });
 };
 
 export const getEdificioById = async (id: EntityId, context: AuthorizationContext): Promise<Edificio | null> => {
   const scope = buildingWhere<Edificio>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.findOne(Edificio, { $and: [{ id: parseId(id) }, scope] });
+  return em.findOne(Edificio, { $and: [{ id: parseId(id) }, scope] }, { populate: ['localidad'] });
 };
 
 export const createEdificio = async (data: CreateEdificioData, context: AuthorizationContext): Promise<Edificio> => {

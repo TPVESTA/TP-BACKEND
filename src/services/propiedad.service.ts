@@ -23,13 +23,13 @@ export type UpdatePropiedadData = Partial<CreatePropiedadData>;
 export const getAllPropiedades = async (context: AuthorizationContext): Promise<Propiedad[]> => {
   const scope = propertyWhere<Propiedad>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.find(Propiedad, scope);
+  return em.find(Propiedad, scope, { populate: ['edificio', 'tipoUnidad'] });
 };
 
 export const getPropiedadById = async (id: EntityId, context: AuthorizationContext): Promise<Propiedad | null> => {
   const scope = propertyWhere<Propiedad>(context, AccionPermiso.LEER);
   const em = getEntityManager();
-  return em.findOne(Propiedad, { $and: [{ id: parseId(id) }, scope] });
+  return em.findOne(Propiedad, { $and: [{ id: parseId(id) }, scope] }, { populate: ['edificio', 'tipoUnidad'] });
 };
 
 export const createPropiedad = async (data: CreatePropiedadData, context: AuthorizationContext): Promise<Propiedad> => {

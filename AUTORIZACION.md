@@ -2,7 +2,7 @@
 
 La autenticación identifica al usuario mediante el JWT existente (`userId`). Cada petición protegida carga sus asignaciones y permisos actuales desde la base. Quitar un permiso o finalizar una asignación surte efecto en la siguiente petición, sin emitir otro token.
 
-Una asignación está vigente cuando `beginAt <= ahora` y `endAt` es nulo o mayor que ahora. Los usuarios deshabilitados o dados de baja no pueden operar. Las administraciones y edificios dados de baja no conceden acceso contextual.
+Una asignación global está vigente cuando `beginAt <= ahora` y `endAt` es nulo o mayor que ahora. Un empleo o una asignación de propiedad concede acceso solo si ese período y el de su `usuario_rol` están vigentes a la vez. Los usuarios deshabilitados o dados de baja no pueden operar. Las administraciones y edificios dados de baja no conceden acceso contextual.
 
 ## Configuración inicial
 
@@ -13,7 +13,7 @@ Una asignación está vigente cuando `beginAt <= ahora` y `endAt` es nulo o mayo
 | RESIDENTE | Crear, leer y editar propias; disponibilidad sin datos personales | Crear y leer propias; editar descripción en Reportado | Leer de su propiedad | Sin gestión |
 | PROPIETARIO | Sin acceso | Crear y leer propias | Leer de su propiedad | Sin gestión |
 | MANTENIMIENTO | Leer ocupación de edificios administrados | Crear, leer, editar y cambiar estado en edificios administrados | Sin acceso | Sin gestión |
-| ADMINISTRATIVO | Leer, editar y cancelar en edificios administrados | Crear, leer, editar y cambiar estado en edificios administrados | CRUD y operaciones específicas | Crear, leer, editar y desvincular dentro de su administración |
+| ADMINISTRATIVO | Leer, editar y cancelar en edificios administrados | Crear, leer, editar y cambiar estado en edificios administrados | CRUD y operaciones específicas | Crear, leer y editar cuentas con empleo o propiedad en su administración |
 
 **Expensas todavía no tiene entidades, servicios ni rutas en este proyecto.** Sus permisos quedan configurados; emitir, anular, registrar pagos y las restricciones de borradores deberán aplicarse cuando se implemente ese módulo.
 
@@ -25,7 +25,7 @@ Los permisos de varios roles se combinan solamente dentro de cada contexto. Un r
 
 ## Puesta en marcha y datos existentes
 
-El arranque usa el mecanismo de actualización de esquema que ya tenía el proyecto. Agrega `rol_permiso`, `usuario_administracion`, los códigos y marcas de inicialización de `rol`, y `propiedad_origen_id`/`deleted_at` en reservas e incidencias. Los valores iniciales de permisos se cargan una sola vez por rol; reiniciar no repone permisos quitados.
+El arranque usa el mecanismo de actualización de esquema que ya tenía el proyecto. Agrega `rol_permiso`, los códigos y marcas de inicialización de `rol`, y `propiedad_origen_id`/`deleted_at` en reservas e incidencias. Los valores iniciales de permisos se cargan una sola vez por rol; reiniciar no repone permisos quitados.
 
 1. Si el usuario inicial todavía no existe, arrancar con `BOOTSTRAP_ADMIN_EMAIL` vacío y registrarlo mediante `/api/auth/register`. El registro público crea una cuenta sin roles ni permisos de negocio.
 2. Configurar `BOOTSTRAP_ADMIN_EMAIL` con el email de una cuenta existente y activa, y reiniciar. Esa cuenta recibe SUPERADMIN una sola vez. Un email inexistente o inactivo hace fallar el arranque para evitar una inicialización incompleta.
@@ -66,10 +66,8 @@ Reservas e incidencias toman el autor de la sesión: `usuarioId` está prohibido
 
 ## Gestión de usuarios y asignaciones
 
-`UsuarioAdministracion` es un vínculo de gestión sin permisos. Crear un usuario desde una administración requiere `administracionId` y crea ese vínculo. El listado de usuarios del Administrativo incluye los vínculos de gestión y empleados vigentes de sus administraciones. Para incorporar cuentas anteriores a ese listado, el administrador global puede crear su vínculo explícito.
+El listado de usuarios del Administrativo reúne dos caminos vigentes: empleados de sus administraciones, y residentes o propietarios de edificios con `AdminEdificio` vigente. Crear un usuario exige un rol: un rol de administración crea el empleo y uno de propiedad crea la asignación sobre esa propiedad. No hay un vínculo de gestión aparte de esos dos caminos.
 
-- `POST /api/users/:id/vinculos/:administracionId`: vincula una cuenta existente; requiere permiso global de creación de usuarios, para impedir que conocer un ID amplíe el ámbito de un Administrativo.
-- `DELETE /api/users/:id/vinculos/:administracionId`: finaliza el vínculo de gestión y los empleos de esa administración; estos últimos también exigen `ASIGNACIONES.REVOCAR`. Preserva la cuenta y sus vínculos con otras administraciones. Las asignaciones de propiedad se revocan explícitamente en su propio endpoint; no se eliminan al desvincular una administración.
 - `DELETE /api/users/:id`: da de baja la cuenta completa y requiere `USUARIOS.DESHABILITAR` global. El Administrativo inicial no lo tiene.
 
 El Administrativo puede editar los datos personales permitidos de usuarios de su ámbito. Cambiar el email o contraseña de otra cuenta requiere edición global de usuarios; modificar `estado` requiere el permiso global de deshabilitación. La edición propia está disponible por `/auth/profile`.

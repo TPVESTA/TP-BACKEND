@@ -127,15 +127,20 @@ const assignmentSpecs = [
 
 for (const spec of assignmentSpecs) {
   test(`asignacion ${spec.name}: actualizar no cambia usuario, rol ni contexto`, async () => {
-    const entity = Object.assign(new spec.Entity(), { id: 200, usuario: { id: 8 }, beginAt: past, ...spec.fixture() });
+    const fixture = spec.fixture();
+    const entity = Object.assign(new spec.Entity(), {
+      id: 200, beginAt: past, ...fixture,
+      ...(spec.name === 'global' ? { usuario: { id: 8 } } : { usuarioRol: { usuario: { id: 8 }, rol: fixture.rol } }),
+    });
     const forbiddenChanges = [{ usuarioId: 9 }, { rolId: 51 }];
     if (spec.contextField) forbiddenChanges.push({ [spec.contextField]: 999 });
     await withEM(spec.Entity, entity, async ({ saved }) => {
       for (const changes of forbiddenChanges) {
         await assert.rejects(spec.update(200, changes, spec.actor()), /No se puede cambiar/);
       }
-      assert.equal(entity.usuario.id, 8);
-      assert.equal(entity.rol.id, 50);
+      const identity = spec.name === 'global' ? entity : entity.usuarioRol;
+      assert.equal(identity.usuario.id, 8);
+      assert.equal(identity.rol.id, 50);
       assert.equal(entity.beginAt, past);
       assert.equal(entity.endAt, null);
       assert.equal(saved.length, 0);
@@ -160,8 +165,9 @@ test('revocar o actualizar asignaciones ajenas consulta unicamente el ambito per
 test('reabrir una asignacion exige ASIGNAR y validar nuevamente los permisos delegables', async () => {
   const permissions = getDefaultRolePermissions(CodigoRol.RESIDENTE);
   permissions.find(permission => permission.seccion === S.RESERVAS).borrar = true;
+  const residentRole = role(AmbitoRol.PROPIEDAD, CodigoRol.RESIDENTE, permissions);
   const entity = Object.assign(new UsuarioRolPropiedad(), {
-    id: 200, usuario: { id: 8 }, rol: role(AmbitoRol.PROPIEDAD, CodigoRol.RESIDENTE, permissions),
+    id: 200, usuarioRol: { usuario: { id: 8 }, rol: residentRole },
     propiedad: { id: 100, edificio: { id: 10 } }, beginAt: past, endAt: now,
   });
   await withEM(UsuarioRolPropiedad, entity, async ({ saved }) => {

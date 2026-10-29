@@ -6,18 +6,18 @@ const express = require('express');
 const auth = require('../src/services/auth.service');
 const routes = require('../src/routes').default;
 const { errorMiddleware, notFoundMiddleware } = require('../src/middlewares/error.middleware');
-const specs = [["administracion","Administracion","Administraciones","administraciones"],["edificio","Edificio","Edificios","edificios"],["localidad","Localidad","Localidades","localidades"],["tipo-unidad","TipoUnidad","TiposUnidad","tipos-unidad"],["unidad","Unidad","Unidades","unidades"],["propiedad","Propiedad","Propiedades","propiedades"],["area-comun","AreaComun","AreasComunes","areas-comunes"],["rol","Rol","Roles","roles"],["empleado","Empleado","Empleados","empleados"],["admin-edificio","AdminEdificio","AdminEdificios","admin-edificios"],["usuario-rol-propiedad","UsuarioRolPropiedad","UsuariosRolesPropiedad","usuarios-roles-propiedad"],["incidencia","Incidencia","Incidencias","incidencias"],["reservacion","Reservacion","Reservaciones","reservaciones"]];
+const specs = [["administracion","Administracion","Administraciones","administraciones"],["edificio","Edificio","Edificios","edificios"],["localidad","Localidad","Localidades","localidades"],["tipo-unidad","TipoUnidad","TiposUnidad","tipos-unidad"],["unidad","Unidad","Unidades","unidades"],["propiedad","Propiedad","Propiedades","propiedades"],["area-comun","AreaComun","AreasComunes","areas-comunes"],["empleado","Empleado","Empleados","empleados"],["admin-edificio","AdminEdificio","AdminEdificios","admin-edificios"],["usuario-rol-propiedad","UsuarioRolPropiedad","UsuariosRolesPropiedad","usuarios-roles-propiedad"],["incidencia","Incidencia","Incidencias","incidencias"],["reservacion","Reservacion","Reservaciones","reservaciones"]];
 const unit = { nroUnidad: '2A', mtCuadrados: 65.25, descripcion: 'Unidad',
   edificioId: '1', tipoUnidadId: '2' };
 const fixtures = {
-  Administracion: { cuit: '30123456789', nombre: 'Admin', email: 'admin@example.com', direccion: 'Calle 1' },
+  Administracion: { cuit: '30123456789', nombre: 'Admin', email: 'admin@example.com', direccion: 'Calle 1', localidadId: '1' },
   Edificio: { cuit: '30123456789', nombre: 'Edificio', direccion: 'Calle 1', localidadId: '1' },
   Localidad: { nombre: 'Rosario', provincia: 'Santa Fe' },
   TipoUnidad: { nombre: 'Departamento', ambito: 'PRIVADO' },
   Unidad: { ...unit, clase: 'propiedad', copropiedad: 10, habitaciones: 2 },
   Propiedad: { ...unit, copropiedad: 10, habitaciones: 2 },
   AreaComun: { ...unit, capacidad: 10 },
-  Rol: { nombre: 'Administrador', descripcion: 'Gestion', ambito: 'ADMINISTRACION' },
+  Rol: { descripcion: 'Gestion', ambito: 'ADMINISTRACION' },
   Empleado: { usuarioId: '1', administracionId: '2', rolId: '3', beginAt: '2026-01-01' },
   AdminEdificio: { administracionId: '1', edificioId: '2', beginAt: '2026-01-01' },
   UsuarioRolPropiedad: { usuarioId: '1', rolId: '2', propiedadId: '3', endAt: null },

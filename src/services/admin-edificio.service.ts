@@ -17,12 +17,12 @@ export type UpdateAdminEdificioData = Partial<CreateAdminEdificioData>;
 
 export const getAllAdminEdificios = async (context: AuthorizationContext): Promise<AdminEdificio[]> => {
   const em = getEntityManager();
-  return em.find(AdminEdificio, administrationBuildingWhere<AdminEdificio>(context));
+  return em.find(AdminEdificio, administrationBuildingWhere<AdminEdificio>(context), { populate: ['administracion', 'edificio.localidad'] });
 };
 
 export const getAdminEdificioById = async (id: EntityId, context: AuthorizationContext): Promise<AdminEdificio | null> => {
   const em = getEntityManager();
-  return em.findOne(AdminEdificio, { $and: [{ id: parseId(id) }, administrationBuildingWhere<AdminEdificio>(context)] });
+  return em.findOne(AdminEdificio, { $and: [{ id: parseId(id) }, administrationBuildingWhere<AdminEdificio>(context)] }, { populate: ['administracion', 'edificio.localidad'] });
 };
 
 export const createAdminEdificio = async (data: CreateAdminEdificioData, context: AuthorizationContext): Promise<AdminEdificio> => {
