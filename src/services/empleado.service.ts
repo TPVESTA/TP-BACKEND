@@ -2,15 +2,14 @@ import { Empleado } from '../entities/Empleado';
 import { User } from '../entities/User';
 import { Rol } from '../entities/Rol';
 import { Administracion } from '../entities/Administracion';
-import { AmbitoRol } from '../entities/AmbitoRol';
+import { AmbitoRol } from '../entities/enums';
 import { SeccionPermiso as S, AccionPermiso as A } from '../entities/Permiso';
-import { AuthorizationContext, requirePermission } from './authorization.service';
+import { AuthorizationContext, requirePermission, authorizedScope } from './authorization.service';
 import { assignmentScope, requireGlobal, requireDelegableRole, revokeAssignment } from './assignment-authorization.helper';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
-import { DomainValidationError } from '../errors/domain-validation.error';
-import { AuthorizationError } from '../errors/authorization.error';
+import { DomainValidationError, AuthorizationError } from '../errors/domain.errors';
+
 import { getUserById } from './user.service';
-import { authorizedScope } from './authorization.service';
 
 export interface CreateEmpleadoData {
   beginAt?: Date; endAt?: Date | null; usuarioId: EntityId; rolId: EntityId;

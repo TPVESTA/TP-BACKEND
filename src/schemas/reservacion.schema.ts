@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { EstadoReservacion } from '../entities/EstadoReservacion';
+import { EstadoReservacion } from '../entities/enums';
 import { createSchema, updateSchema, fechaSchema, descripcionSchema, idSchema } from './common.schema';
 
 const fields = {

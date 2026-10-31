@@ -3,12 +3,11 @@ import { Reservacion } from '../entities/Reservacion';
 import { User } from '../entities/User';
 import { AreaComun } from '../entities/AreaComun';
 import { Propiedad } from '../entities/Propiedad';
-import { AmbitoRol } from '../entities/AmbitoRol';
-import { EstadoReservacion } from '../entities/EstadoReservacion';
+import { AmbitoRol, EstadoReservacion } from '../entities/enums';
+
 import { AccionPermiso, SeccionPermiso } from '../entities/Permiso';
-import { DomainValidationError } from '../errors/domain-validation.error';
-import { AuthorizationError } from '../errors/authorization.error';
-import { ConflictError } from '../errors/conflict.error';
+import { DomainValidationError, AuthorizationError, ConflictError } from '../errors/domain.errors';
+
 import { AuthorizationContext, hasPermission, matchingGrants } from './authorization.service';
 import { requireBusinessAuthorization, selectOriginProperty } from './business-authorization.helper';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';

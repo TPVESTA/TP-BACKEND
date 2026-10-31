@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { EstadoIncidencia } from '../entities/EstadoIncidencia';
+import { EstadoIncidencia } from '../entities/enums';
 import { createSchema, updateSchema, descripcionSchema, idSchema } from './common.schema';
 
 const fields = {

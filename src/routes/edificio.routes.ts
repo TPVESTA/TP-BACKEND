@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as controller from '../controllers/edificio.controller';
 import { validate } from '../middlewares/validate';
 import { idParamSchema } from '../schemas/common.schema';
-import { createEdificioSchema, updateEdificioSchema } from '../schemas/edificio.schema';
+import { createEdificioSchema, updateEdificioSchema } from '../schemas/estructura.schema';
 
 // La autenticación se aplica en routes/index.ts antes de montar este router.
 const router: Router = Router();

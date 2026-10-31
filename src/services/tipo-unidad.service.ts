@@ -2,10 +2,10 @@ import { AuthorizationContext } from './authorization.service';
 import { AccionPermiso } from '../entities/Permiso';
 import { requireCatalogPermission } from './structure-authorization.helper';
 import { TipoUnidad } from '../entities/TipoUnidad';
-import { AmbitoUnidad } from '../entities/AmbitoUnidad';
+import { AmbitoUnidad } from '../entities/enums';
 import { Propiedad } from '../entities/Propiedad';
 import { AreaComun } from '../entities/AreaComun';
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { DomainValidationError } from '../errors/domain.errors';
 import { EntityId, getEntityManager, parseId } from './service.helper';
 
 export interface CreateTipoUnidadData {

@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const { MikroORM, EventType } = require('@mikro-orm/core');
 const config = require('../src/config/mikro-orm.config').default;
 const manager = require('../src/database/DatabaseManager').default.getInstance();
-const { AmbitoRol } = require('../src/entities/AmbitoRol');
+const { AmbitoRol } = require('../src/entities/enums');
 const { parseId } = require('../src/services/service.helper');
 const specs = [
   {"file":"localidad","name":"Localidad","plural":"Localidades","fields":{"nombre":"string","provincia":"string"}},

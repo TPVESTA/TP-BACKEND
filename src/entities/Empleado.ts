@@ -1,10 +1,10 @@
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { DomainValidationError } from '../errors/domain.errors';
 import { Entity, PrimaryKey, Property, ManyToOne, Rel, BeforeCreate, BeforeUpdate, wrap } from '@mikro-orm/core';
 import { User } from './User';
 import { Administracion } from './Administracion';
 import { Rol } from './Rol';
 
-import { AmbitoRol } from './AmbitoRol';
+import { AmbitoRol } from './enums';
 
 @Entity({ tableName: 'empleado' })
 export class Empleado {

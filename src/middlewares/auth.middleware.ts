@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, getUserByIdForAuth } from '../services/auth.service';
-import { AuthenticationError } from '../errors/authentication.error';
+import { AuthorizationContext, loadAuthorizationContext } from '../services/authorization.service';
+import { AuthenticationError, AuthorizationError } from '../errors/domain.errors';
 
 declare global {
   namespace Express {
     interface Request {
+      authorization?: AuthorizationContext;
       user?: {
         id: number;
         nombre: string;
@@ -17,6 +19,7 @@ declare global {
   }
 }
 
+// 1. Autenticación: valida el token y carga la cuenta activa.
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   delete req.user;
   try {
@@ -48,4 +51,20 @@ export const optionalAuthMiddleware = async (req: Request, res: Response, next: 
     return;
   }
   await authMiddleware(req, res, next);
+};
+
+// 2. Autorización: carga roles y permisos vigentes para esta petición.
+export const authorizationMiddleware = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+  delete req.authorization;
+  try {
+    if (!req.user) throw new AuthenticationError('Usuario no autenticado');
+    req.authorization = await loadAuthorizationContext(req.user.id);
+    next();
+  } catch (error) { next(error); }
+};
+
+// Los controladores toman de aquí el contexto que pasan a los servicios.
+export const requireAuthorization = (req: Request): AuthorizationContext => {
+  if (!req.authorization) throw new AuthorizationError('Se requiere el contexto de autorización.');
+  return req.authorization;
 };

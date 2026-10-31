@@ -3,11 +3,11 @@ import { Incidencia } from '../entities/Incidencia';
 import { User } from '../entities/User';
 import { Unidad } from '../entities/Unidad';
 import { Propiedad } from '../entities/Propiedad';
-import { AmbitoRol } from '../entities/AmbitoRol';
-import { EstadoIncidencia } from '../entities/EstadoIncidencia';
+import { AmbitoRol, EstadoIncidencia } from '../entities/enums';
+
 import { AccionPermiso, SeccionPermiso } from '../entities/Permiso';
-import { AuthorizationError } from '../errors/authorization.error';
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { AuthorizationError, DomainValidationError } from '../errors/domain.errors';
+
 import { AuthorizationContext, matchingGrants } from './authorization.service';
 import { requireBusinessAuthorization, selectOriginProperty } from './business-authorization.helper';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';

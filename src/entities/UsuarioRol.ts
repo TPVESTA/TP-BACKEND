@@ -1,8 +1,8 @@
 import { Entity, PrimaryKey, Property, ManyToOne, Rel, BeforeCreate, BeforeUpdate, wrap } from '@mikro-orm/core';
 import { User } from './User';
 import { Rol } from './Rol';
-import { AmbitoRol } from './AmbitoRol';
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { AmbitoRol } from './enums';
+import { DomainValidationError } from '../errors/domain.errors';
 
 // Registra asignaciones; la autorización por rol se implementará por separado.
 @Entity({ tableName: 'usuario_rol' })

@@ -1,13 +1,13 @@
 import { EntityManager } from '@mikro-orm/core';
 import { AdminEdificio } from '../entities/AdminEdificio';
-import { AmbitoRol } from '../entities/AmbitoRol';
+import { AmbitoRol } from '../entities/enums';
 import { Empleado } from '../entities/Empleado';
 import { AccionPermiso, CodigoRol, SeccionPermiso } from '../entities/Permiso';
 import { RolPermiso } from '../entities/RolPermiso';
 import { User } from '../entities/User';
 import { UsuarioRol } from '../entities/UsuarioRol';
 import { UsuarioRolPropiedad } from '../entities/UsuarioRolPropiedad';
-import { AuthorizationError } from '../errors/authorization.error';
+import { AuthorizationError } from '../errors/domain.errors';
 import { EntityId, getEntityManager, parseId } from './service.helper';
 import { getDefaultRolePermissions } from './permission-seed.service';
 import { isSystemAdminRole } from './system-admin.helper';

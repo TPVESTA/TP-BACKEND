@@ -1,4 +1,4 @@
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { DomainValidationError } from '../errors/domain.errors';
 import { EntityManager, EntityName, FilterQuery } from '@mikro-orm/core';
 import DatabaseManager from '../database/DatabaseManager';
 

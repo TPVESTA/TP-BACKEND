@@ -14,8 +14,7 @@ import adminEdificioRoutes from './admin-edificio.routes';
 import usuarioRolPropiedadRoutes from './usuario-rol-propiedad.routes';
 import incidenciaRoutes from './incidencia.routes';
 import reservacionRoutes from './reservacion.routes';
-import { authMiddleware } from '../middlewares/auth.middleware';
-import { authorizationMiddleware } from '../middlewares/authorization.middleware';
+import { authMiddleware, authorizationMiddleware } from '../middlewares/auth.middleware';
 
 import usuarioRolRoutes from './usuario-rol.routes';
 

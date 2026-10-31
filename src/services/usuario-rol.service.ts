@@ -2,12 +2,12 @@ import { UsuarioRol } from '../entities/UsuarioRol';
 import { User } from '../entities/User';
 import { Rol } from '../entities/Rol';
 
-import { AmbitoRol } from '../entities/AmbitoRol';
+import { AmbitoRol } from '../entities/enums';
 import { SeccionPermiso as S, AccionPermiso as A } from '../entities/Permiso';
 import { AuthorizationContext, requirePermission } from './authorization.service';
 import { assignmentScope, requireGlobal, requireDelegableRole, revokeAssignment } from './assignment-authorization.helper';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { DomainValidationError } from '../errors/domain.errors';
 
 export interface CreateUsuarioRolData {
   beginAt?: Date; endAt?: Date | null; usuarioId: EntityId; rolId: EntityId;

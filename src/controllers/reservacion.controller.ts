@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
-import type {} from '../middlewares/auth.middleware';
-import type {} from '../middlewares/authorization.middleware';
+
 import * as service from '../services/reservacion.service';
 import { ResponseHelper } from '../helpers/response.helper';
 import { handleControllerError, requireObjectBody } from '../helpers/controller.helper';
-import { requireAuthorization } from '../services/authorization-request.helper';
+import { requireAuthorization } from '../middlewares/auth.middleware';
 import { serializeReservacion } from '../helpers/business-response.helper';
 
 // Los schemas de las rutas validan y convierten los campos antes del controlador.

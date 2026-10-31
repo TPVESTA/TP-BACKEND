@@ -2,7 +2,7 @@ require('ts-node/register');
 require('reflect-metadata');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { AmbitoRol } = require('../src/entities/AmbitoRol');
+const { AmbitoRol } = require('../src/entities/enums');
 const { AccionPermiso: A, SeccionPermiso: S, CodigoRol } = require('../src/entities/Permiso');
 const { UsuarioRolPropiedad } = require('../src/entities/UsuarioRolPropiedad');
 const { Empleado } = require('../src/entities/Empleado');

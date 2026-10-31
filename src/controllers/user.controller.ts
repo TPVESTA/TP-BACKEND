@@ -1,6 +1,6 @@
 ﻿import { Request, Response } from 'express';
 import * as service from '../services/user.service';
-import { requireAuthorization } from '../services/authorization-request.helper';
+import { requireAuthorization } from '../middlewares/auth.middleware';
 import { ResponseHelper } from '../helpers/response.helper';
 import { handleControllerError } from '../helpers/controller.helper';
 

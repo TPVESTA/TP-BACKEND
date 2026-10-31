@@ -1,7 +1,7 @@
 import { AuthorizationContext } from './authorization.service';
 import { AccionPermiso } from '../entities/Permiso';
 import { commonAreaWhere, requireBuildingMutation } from './structure-authorization.helper';
-import { AmbitoUnidad } from '../entities/AmbitoUnidad';
+import { AmbitoUnidad } from '../entities/enums';
 import { requireAmbitoUnidad } from './ambito-unidad.helper';
 import { AreaComun } from '../entities/AreaComun';
 import { Edificio } from '../entities/Edificio';

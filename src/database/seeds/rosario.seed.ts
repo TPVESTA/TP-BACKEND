@@ -2,7 +2,7 @@ import { EntityClass, EntityManager, FilterQuery } from "@mikro-orm/core";
 import bcrypt from "bcryptjs";
 import { Administracion } from "../../entities/Administracion";
 import { AdminEdificio } from "../../entities/AdminEdificio";
-import { AmbitoUnidad } from "../../entities/AmbitoUnidad";
+import { AmbitoUnidad } from "../../entities/enums";
 import { AreaComun } from "../../entities/AreaComun";
 import { Edificio } from "../../entities/Edificio";
 import { Empleado } from "../../entities/Empleado";

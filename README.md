@@ -7,6 +7,39 @@
 
 Este proyecto es una demostración de cómo crear una API REST con Node.js, Express, TypeScript y MikroORM con persistencia en MySQL.
 
+## Cómo leer el código
+
+Para seguir una operación, recorrer estas capas en orden:
+
+```text
+app.ts → routes/ → middlewares/ → controllers/ → services/ → entities/ → MySQL
+```
+
+Por ejemplo, una reserva entra por `routes/reservacion.routes.ts`, pasa por la
+seguridad y la validación, llega a `controllers/reservacion.controller.ts` y
+ejecuta las reglas de `services/reservacion.service.ts`. La entidad
+`entities/Reservacion.ts` define cómo se guarda. El servicio contiene la
+transacción que evita reservar dos veces el mismo espacio y día.
+
+Se conserva un archivo por entidad y por servicio. Las definiciones pequeñas
+se agrupan para reducir los saltos entre archivos:
+
+| Qué buscar | Archivo |
+| --- | --- |
+| Estados y ámbitos del dominio | `src/entities/enums.ts` |
+| Errores de autenticación, permisos, validación y conflictos | `src/errors/domain.errors.ts` |
+| Autenticar, cargar permisos y obtener el contexto de la petición | `src/middlewares/auth.middleware.ts` |
+| Validación de localidades, tipos de unidad y roles | `src/schemas/catalogos.schema.ts` |
+| Validación de administraciones y edificios | `src/schemas/estructura.schema.ts` |
+| Validación de unidades, propiedades y áreas comunes | `src/schemas/unidad.schema.ts` |
+| Validación de empleados y asignaciones con vigencia | `src/schemas/asignaciones.schema.ts` |
+| Campos Joi compartidos | `src/schemas/common.schema.ts` |
+
+Autenticación y autorización siguen siendo dos pasos distintos, exportados
+desde el mismo archivo. Los controladores reciben y responden HTTP; los
+servicios conservan las reglas de negocio. Las funciones públicas y las rutas
+mantienen sus nombres y contratos.
+
 ## 🚀 Características
 
 - **TypeScript**: Tipado estático para mayor seguridad y productividad

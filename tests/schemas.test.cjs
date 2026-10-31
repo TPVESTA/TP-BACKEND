@@ -131,8 +131,21 @@ function dataFor(spec) {
   const fields = [...(spec.kind === 'unidad' ? ['nroUnidad','mtCuadrados','descripcion','edificioId','tipoUnidadId'] : []), ...spec.fields];
   return Object.fromEntries(fields.map(key => [key, key.endsWith('Id') ? '1' : key === 'ambito' && spec.name === 'TipoUnidad' ? 'PRIVADO' : samples[key]]));
 }
+const schemaGroups = {
+  empleado: 'asignaciones',
+  'admin-edificio': 'asignaciones',
+  'usuario-rol': 'asignaciones',
+  'usuario-rol-propiedad': 'asignaciones',
+  propiedad: 'unidad',
+  'area-comun': 'unidad',
+  localidad: 'catalogos',
+  'tipo-unidad': 'catalogos',
+  rol: 'catalogos',
+  administracion: 'estructura',
+  edificio: 'estructura',
+};
 for (const spec of specs) {
-  const module = require('../src/schemas/' + spec.file + '.schema');
+  const module = require('../src/schemas/' + (schemaGroups[spec.file] || spec.file) + '.schema');
   const create = module['create' + spec.name + 'Schema'];
   const update = module['update' + spec.name + 'Schema'];
   test(spec.name + ': alta completa, campos obligatorios y conversiones', () => {
@@ -233,14 +246,14 @@ test('unidades: seleccion de subtipo y al menos un cambio ademas de clase', () =
   assert.ok(unidad.updateUnidadSchema.validate({ descripcion: 'Nueva' }, options).error);
 });
 test('numeros no se redondean ni aceptan negativos o fracciones en cantidades enteras', () => {
-  const p = require('../src/schemas/propiedad.schema').updatePropiedadSchema;
+  const p = require('../src/schemas/unidad.schema').updatePropiedadSchema;
   for (const patch of [{ copropiedad: -1 }, { copropiedad: 101 }, { copropiedad: 1.12345 },
     { habitaciones: 1.5 }, { mtCuadrados: 1.234 }, { mtCuadrados: -1 }, { mtCuadrados: Infinity }]) {
     assert.ok(p.validate(patch, options).error);
   }
   assert.ifError(p.validate({ copropiedad: 0, habitaciones: 0, mtCuadrados: 0 }, options).error);
   assert.ifError(p.validate({ copropiedad: 100 }, options).error);
-  const rol = require('../src/schemas/rol.schema').createRolSchema;
+  const rol = require('../src/schemas/catalogos.schema').createRolSchema;
   assert.ok(rol.validate({ nombre: 'Rol', descripcion: 'Desc', ambito: 'OTRO' }, options).error);
 });
 test('validate entrega al controlador fechas convertidas y todos los campos del usuario', async () => {

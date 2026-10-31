@@ -4,6 +4,13 @@ Cada entidad concreta tiene `create<Entidad>Schema` y `update<Entidad>Schema`
 en `src/schemas`. `common.schema.ts` centraliza campos compartidos y
 `idParamSchema`. `AmbitoRol` es un enum: sus valores se validan en Rol.
 
+Los esquemas están agrupados por tema: `catalogos.schema.ts` (Localidad,
+TipoUnidad y Rol), `estructura.schema.ts` (Administración y Edificio),
+`unidad.schema.ts` (Unidad, Propiedad y Área común) y `asignaciones.schema.ts`
+(Empleado, AdminEdificio, UsuarioRol y UsuarioRolPropiedad). Usuarios,
+reservas e incidencias conservan su archivo específico. Los nombres de las
+exportaciones `create<Entidad>Schema` y `update<Entidad>Schema` se mantienen.
+
 Los schemas se conectan a las rutas con el middleware existente:
 
 ```ts

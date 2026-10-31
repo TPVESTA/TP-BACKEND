@@ -1,7 +1,7 @@
-import { AmbitoRol } from '../entities/AmbitoRol';
+import { AmbitoRol } from '../entities/enums';
 import { AccionPermiso, SeccionPermiso } from '../entities/Permiso';
-import { AuthorizationError } from '../errors/authorization.error';
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { AuthorizationError, DomainValidationError } from '../errors/domain.errors';
+
 import { AuthorizationContext, matchingGrants } from './authorization.service';
 import { EntityId, parseId } from './service.helper';
 

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ResponseHelper } from '../helpers/response.helper';
 import * as authService from '../services/auth.service';
-import { requireAuthorization } from '../services/authorization-request.helper';
+import { requireAuthorization } from '../middlewares/auth.middleware';
 import { updateOwnProfile } from '../services/user.service';
 import { handleControllerError } from '../helpers/controller.helper';
 

@@ -1,6 +1,6 @@
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { DomainValidationError } from '../errors/domain.errors';
 import { Entity, Property, PrimaryKey, Enum, OneToMany, Collection, BeforeUpdate, EventArgs } from '@mikro-orm/core';
-import { AmbitoRol } from './AmbitoRol';
+import { AmbitoRol } from './enums';
 import { Empleado } from './Empleado';
 import { UsuarioRolPropiedad } from './UsuarioRolPropiedad';
 import { RolPermiso } from './RolPermiso';

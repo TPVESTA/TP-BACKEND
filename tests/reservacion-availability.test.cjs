@@ -7,8 +7,8 @@ const service = require('../src/services/reservacion.service');
 const controller = require('../src/controllers/reservacion.controller');
 const { Reservacion } = require('../src/entities/Reservacion');
 const { AreaComun } = require('../src/entities/AreaComun');
-const { EstadoReservacion: E } = require('../src/entities/EstadoReservacion');
-const { ConflictError } = require('../src/errors/conflict.error');
+const { EstadoReservacion: E } = require('../src/entities/enums');
+const { ConflictError } = require('../src/errors/domain.errors');
 const manager = require('../src/database/DatabaseManager').default.getInstance();
 
 const day = '2099-10-06';

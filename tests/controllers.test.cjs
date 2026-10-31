@@ -2,7 +2,7 @@ require('ts-node/register');
 require('reflect-metadata');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { DomainValidationError } = require('../src/errors/domain-validation.error');
+const { DomainValidationError } = require('../src/errors/domain.errors');
 const { ForeignKeyConstraintViolationException, UniqueConstraintViolationException } = require('@mikro-orm/core');
 const specs = [
   [

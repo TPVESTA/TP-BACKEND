@@ -1,6 +1,6 @@
 import { TipoUnidad } from '../entities/TipoUnidad';
-import { AmbitoUnidad } from '../entities/AmbitoUnidad';
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { AmbitoUnidad } from '../entities/enums';
+import { DomainValidationError } from '../errors/domain.errors';
 
 export function requireAmbitoUnidad(tipo: TipoUnidad, expected: AmbitoUnidad): void {
   if (tipo.ambito !== expected) {

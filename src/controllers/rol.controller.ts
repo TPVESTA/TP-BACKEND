@@ -1,4 +1,4 @@
-import { requireAuthorization } from '../services/authorization-request.helper';
+import { requireAuthorization } from '../middlewares/auth.middleware';
 import { Request, Response } from 'express';
 import * as service from '../services/rol.service';
 import { ResponseHelper } from '../helpers/response.helper';
@@ -64,7 +64,6 @@ export const deleteRol = async (req: Request, res: Response): Promise<void> => {
     handleControllerError(res, error, 'deleteRol');
   }
 };
-
 
 export const replacePermissions = async (req: Request, res: Response): Promise<void> => {
   try {

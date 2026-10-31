@@ -3,10 +3,10 @@ import { User } from '../entities/User';
 import { UsuarioAdministracion } from '../entities/UsuarioAdministracion';
 import { Administracion } from '../entities/Administracion';
 import { Empleado } from '../entities/Empleado';
-import { AmbitoRol } from '../entities/AmbitoRol';
+import { AmbitoRol } from '../entities/enums';
 import { SeccionPermiso as S, AccionPermiso as A } from '../entities/Permiso';
-import { DomainValidationError } from '../errors/domain-validation.error';
-import { AuthorizationError } from '../errors/authorization.error';
+import { DomainValidationError, AuthorizationError } from '../errors/domain.errors';
+
 import { hashPassword } from './auth.service';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
 import { AuthorizationContext, authorizedScope, requirePermission } from './authorization.service';

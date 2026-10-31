@@ -1,7 +1,7 @@
-import { AmbitoRol } from '../entities/AmbitoRol';
+import { AmbitoRol } from '../entities/enums';
 import { Rol } from '../entities/Rol';
 import { SeccionPermiso as S, AccionPermiso as A } from '../entities/Permiso';
-import { AuthorizationError } from '../errors/authorization.error';
+import { AuthorizationError } from '../errors/domain.errors';
 import { AuthorizationContext, AuthorizationTarget, authorizedScope, hasPermission, requirePermission } from './authorization.service';
 import { getDefaultRolePermissions } from './permission-seed.service';
 

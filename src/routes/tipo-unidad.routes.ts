@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as controller from '../controllers/tipo-unidad.controller';
 import { validate } from '../middlewares/validate';
 import { idParamSchema } from '../schemas/common.schema';
-import { createTipoUnidadSchema, updateTipoUnidadSchema } from '../schemas/tipo-unidad.schema';
+import { createTipoUnidadSchema, updateTipoUnidadSchema } from '../schemas/catalogos.schema';
 
 // La autenticación se aplica en routes/index.ts antes de montar este router.
 const router: Router = Router();

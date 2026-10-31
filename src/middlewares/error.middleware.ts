@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthenticationError } from '../errors/authentication.error';
+import { AuthenticationError } from '../errors/domain.errors';
 import { handleControllerError } from '../helpers/controller.helper';
 import { ResponseHelper } from '../helpers/response.helper';
 

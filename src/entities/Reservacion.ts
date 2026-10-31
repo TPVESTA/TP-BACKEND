@@ -1,5 +1,5 @@
 import { Entity, PrimaryKey, Property, ManyToOne, Rel, Enum, Filter } from '@mikro-orm/core';
-import { EstadoReservacion } from './EstadoReservacion';
+import { EstadoReservacion } from './enums';
 import { User } from './User';
 import { AreaComun } from './AreaComun';
 import { Propiedad } from './Propiedad';

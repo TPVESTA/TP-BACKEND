@@ -2,7 +2,7 @@ require('ts-node/register');
 require('reflect-metadata');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { AuthorizationError } = require('../src/errors/authorization.error');
+const { AuthorizationError } = require('../src/errors/domain.errors');
 const { getDefaultRolePermissions } = require('../src/services/permission-seed.service');
 const manager = require('../src/database/DatabaseManager').default.getInstance();
 const properties = require('../src/services/propiedad.service');

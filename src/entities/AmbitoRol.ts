@@ -1,5 +1,0 @@
-export enum AmbitoRol {
-  GLOBAL = 'GLOBAL',
-  PROPIEDAD = 'PROPIEDAD',
-  ADMINISTRACION = 'ADMINISTRACION',
-}

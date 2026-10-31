@@ -1,6 +1,6 @@
 import { Entity, PrimaryKey, Property, OneToMany, Collection, Enum } from '@mikro-orm/core';
 import { Unidad } from './Unidad';
-import { AmbitoUnidad } from './AmbitoUnidad';
+import { AmbitoUnidad } from './enums';
 
 @Entity({ tableName: 'tipo_unidad' })
 export class TipoUnidad {

@@ -1,4 +1,4 @@
-import { AmbitoRol } from '../entities/AmbitoRol';
+import { AmbitoRol } from '../entities/enums';
 import { CodigoRol } from '../entities/Permiso';
 
 /** Compatibilidad con el rol SysAdmin anterior a los codigos internos. */

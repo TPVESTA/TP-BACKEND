@@ -1,6 +1,6 @@
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { DomainValidationError } from '../errors/domain.errors';
 import { Rol } from '../entities/Rol';
-import { AmbitoRol } from '../entities/AmbitoRol';
+import { AmbitoRol } from '../entities/enums';
 import { EntityId, getEntityManager, parseId } from './service.helper';
 import { RolPermiso } from '../entities/RolPermiso';
 import { SeccionPermiso as S, AccionPermiso as A } from '../entities/Permiso';

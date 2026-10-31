@@ -2,7 +2,7 @@ require('ts-node/register');
 require('reflect-metadata');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { createTipoUnidadSchema, updateTipoUnidadSchema } = require('../src/schemas/tipo-unidad.schema');
+const { createTipoUnidadSchema, updateTipoUnidadSchema } = require('../src/schemas/catalogos.schema');
 const { TipoUnidad } = require('../src/entities/TipoUnidad');
 const { requireAmbitoUnidad } = require('../src/services/ambito-unidad.helper');
 const service = require('../src/services/tipo-unidad.service');

@@ -1,4 +1,4 @@
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { DomainValidationError } from '../errors/domain.errors';
 import { Entity, Property, OneToMany, Collection, BeforeCreate, BeforeUpdate } from '@mikro-orm/core';
 import { Unidad } from './Unidad';
 import { UsuarioRolPropiedad } from './UsuarioRolPropiedad';

@@ -1,5 +1,5 @@
 import { Entity, PrimaryKey, Property, ManyToOne, Rel, Enum, Filter } from '@mikro-orm/core';
-import { EstadoIncidencia } from './EstadoIncidencia';
+import { EstadoIncidencia } from './enums';
 import { User } from './User';
 import { Unidad } from './Unidad';
 import { Propiedad } from './Propiedad';

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as controller from '../controllers/usuario-rol-propiedad.controller';
 import { validate } from '../middlewares/validate';
 import { idParamSchema } from '../schemas/common.schema';
-import { createUsuarioRolPropiedadSchema, updateUsuarioRolPropiedadSchema } from '../schemas/usuario-rol-propiedad.schema';
+import { createUsuarioRolPropiedadSchema, updateUsuarioRolPropiedadSchema } from '../schemas/asignaciones.schema';
 
 // La autenticación se aplica en routes/index.ts antes de montar este router.
 const router: Router = Router();

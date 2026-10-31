@@ -2,8 +2,7 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import DatabaseManager from '../database/DatabaseManager';
 import { User } from '../entities/User';
-import { AuthenticationError } from '../errors/authentication.error';
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { AuthenticationError, DomainValidationError } from '../errors/domain.errors';
 
 interface LoginData {
   email: string;

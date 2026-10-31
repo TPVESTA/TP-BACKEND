@@ -1,9 +1,7 @@
 import { Response } from 'express';
 import { ForeignKeyConstraintViolationException, UniqueConstraintViolationException } from '@mikro-orm/core';
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { DomainValidationError, AuthorizationError, ConflictError } from '../errors/domain.errors';
 import { ResponseHelper } from './response.helper';
-import { AuthorizationError } from '../errors/authorization.error';
-import { ConflictError } from '../errors/conflict.error';
 
 // Solo comprueba la estructura; las reglas de cada campo corresponden a Joi.
 export const requireObjectBody = (body: unknown): void => {
