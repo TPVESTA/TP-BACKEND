@@ -25,7 +25,7 @@ Los permisos de varios roles se combinan solamente dentro de cada contexto. Un r
 
 ## Puesta en marcha y datos existentes
 
-El arranque usa el mecanismo de actualización de esquema que ya tenía el proyecto. Agrega `rol_permiso`, los códigos y marcas de inicialización de `rol`, y `propiedad_origen_id`/`deleted_at` en reservas e incidencias. Los valores iniciales de permisos se cargan una sola vez por rol; reiniciar no repone permisos quitados.
+El arranque usa el mecanismo de actualización de esquema que ya tenía el proyecto. Agrega `rol_permiso`, los códigos y marcas de inicialización de `rol`, `propiedad_origen_id` en reservas e incidencias. Los valores iniciales de permisos se cargan una sola vez por rol; reiniciar no repone permisos quitados.
 
 1. Si el usuario inicial todavía no existe, arrancar con `BOOTSTRAP_ADMIN_EMAIL` vacío y registrarlo mediante `/api/auth/register`. El registro público crea una cuenta sin roles ni permisos de negocio.
 2. Configurar `BOOTSTRAP_ADMIN_EMAIL` con el email de una cuenta existente y activa, y reiniciar. Esa cuenta recibe SUPERADMIN una sola vez. Un email inexistente o inactivo hace fallar el arranque para evitar una inicialización incompleta.
@@ -62,7 +62,7 @@ Ejemplo de configuración de un rol:
 }
 ```
 
-Reservas e incidencias toman el autor de la sesión: `usuarioId` está prohibido en sus altas. Una incidencia conserva su autor y unidad. Cambiar su estado exige `CAMBIAR_ESTADO` y respeta Reportado → En revisión → Finalizado. Cancelar una reserva usa su estado; no necesita permiso de baja. Las bajas autorizadas de reservas e incidencias son lógicas.
+Reservas e incidencias toman el autor de la sesión: `usuarioId` está prohibido en sus altas. Una incidencia conserva su autor y unidad. Cambiar su estado exige `CAMBIAR_ESTADO` y respeta Reportado → En revisión → Finalizado; mientras esté en Reportado o En revisión también puede pasar a Cancelado. Finalizado y Cancelado son estados finales y completan `closedAt`. Reservas e incidencias no tienen baja: no existen `DELETE /api/reservaciones/:id` ni `DELETE /api/incidencias/:id`. Cancelar una reserva usa su estado.
 
 ## Gestión de usuarios y asignaciones
 

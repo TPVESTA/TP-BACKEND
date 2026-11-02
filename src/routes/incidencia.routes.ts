@@ -21,9 +21,5 @@ router.put('/:id',
   validate({ location: 'body', schema: updateIncidenciaSchema }),
   controller.updateIncidencia
 );
-router.delete('/:id',
-  validate({ location: 'params', schema: idParamSchema }),
-  controller.deleteIncidencia
-);
 
 export default router;

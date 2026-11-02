@@ -22,6 +22,9 @@ export class User {
   email!: string;
 
   @Property()
+  telefono!: string;
+
+  @Property()
   fechaNacimiento!: Date;
 
   @Property({ hidden: true }) // Revisar

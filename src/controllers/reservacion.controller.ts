@@ -55,19 +55,6 @@ export const updateReservacion = async (req: Request, res: Response): Promise<vo
   }
 };
 
-export const deleteReservacion = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const result = await service.deleteReservacion(String(req.params.id), requireAuthorization(req));
-    if (!result) {
-      ResponseHelper.notFound(res, 'Reservación no encontrada');
-      return;
-    }
-    ResponseHelper.success(res, serializeReservacion(result), 'Reservación eliminada exitosamente');
-  } catch (error: unknown) {
-    handleControllerError(res, error, 'deleteReservacion');
-  }
-};
-
 export const getDisponibilidad = async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await service.getDisponibilidadReservaciones(String(req.query.areaComunId), requireAuthorization(req));

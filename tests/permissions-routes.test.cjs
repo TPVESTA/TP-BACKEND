@@ -158,7 +158,7 @@ test('el registro publico crea una cuenta sin conceder roles ni acceso administr
   await withApp(async ({ request, rows, writes }) => {
     assert.equal((await request('GET', '/users')).status, 401);
     const registration = await request('POST', '/auth/register', undefined, {
-      cuil: '20123456789', nombre: 'Nueva', apellido: 'Cuenta', email: 'registro@example.test',
+      cuil: '20123456789', nombre: 'Nueva', apellido: 'Cuenta', email: 'registro@example.test', telefono: '3415550001',
       fechaNacimiento: '1990-01-01', password: 'clave-segura', estado: true,
       rolId: 14, administracionId: 30, permisos: ['SUPERADMIN'],
     });
@@ -226,7 +226,7 @@ test('administrativos no pueden vincular cuentas ajenas, operar otra administrac
       ['PUT', '/users/1', { email: 'otro@example.test' }],
       ['POST', '/usuarios-roles', { usuarioId: 2, rolId: 14 }],
       ['POST', '/users', {
-        cuil: '20123456789', nombre: 'Nueva', apellido: 'Cuenta', email: 'ajena@example.test',
+        cuil: '20123456789', nombre: 'Nueva', apellido: 'Cuenta', email: 'ajena@example.test', telefono: '3415550002',
         fechaNacimiento: '1990-01-01', password: 'clave-segura', estado: true, rolId: 13, administracionId: 40,
       }],
     ];

@@ -280,6 +280,7 @@ export async function seedRosario(entityManager: EntityManager) {
           true,
         );
         account.cuil = fiscalId(20, 30000000 + index);
+        account.telefono = `341555${String(index).padStart(4, "0")}`;
         await em.persistAndFlush(account);
       }
       return account;

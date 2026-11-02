@@ -26,7 +26,7 @@ const incidenceScope = (context: AuthorizationContext, action: AccionPermiso): F
   requireBusinessAuthorization(context);
   const grants = matchingGrants(context, SeccionPermiso.INCIDENCIAS, action);
   if (!grants.length) throw new AuthorizationError('No tiene permiso para esta operación sobre incidencias.');
-  if (grants.some(grant => grant.ambito === AmbitoRol.GLOBAL)) return { deletedAt: null };
+  if (grants.some(grant => grant.ambito === AmbitoRol.GLOBAL)) return {};
   const clauses: FilterQuery<Incidencia>[] = [];
   for (const grant of grants) {
     if (!grant.edificioIds.length) continue;
@@ -41,7 +41,7 @@ const incidenceScope = (context: AuthorizationContext, action: AccionPermiso): F
     }
   }
   if (!clauses.length) throw new AuthorizationError('No tiene un ámbito vigente para esta operación.');
-  return { deletedAt: null, $or: clauses };
+  return { $or: clauses };
 };
 
 export const getAllIncidencias = async (context: AuthorizationContext): Promise<Incidencia[]> => {
@@ -111,25 +111,18 @@ export const updateIncidencia = async (id: EntityId, data: UpdateIncidenciaData,
     const next = entity.estado === EstadoIncidencia.REPORTADO
       ? EstadoIncidencia.EN_REVISION
       : entity.estado === EstadoIncidencia.EN_REVISION ? EstadoIncidencia.FINALIZADO : undefined;
-    if (data.estado !== next) throw new DomainValidationError('La secuencia permitida es Reportado → En revisión → Finalizado.');
+    // Una incidencia abierta también puede cancelarse; Finalizado y Cancelado son estados finales.
+    const cancel = data.estado === EstadoIncidencia.CANCELADO && next !== undefined;
+    if (data.estado !== next && !cancel) {
+      throw new DomainValidationError('La secuencia permitida es Reportado → En revisión → Finalizado; una incidencia abierta también puede pasar a Cancelado.');
+    }
   }
   // Todas las validaciones preceden a la mutación de la entidad.
   if (data.estado !== undefined) {
     entity.estado = data.estado;
-    if (data.estado === EstadoIncidencia.FINALIZADO) entity.closedAt = context.now;
+    if (data.estado === EstadoIncidencia.FINALIZADO || data.estado === EstadoIncidencia.CANCELADO) entity.closedAt = context.now;
   }
   if (data.descripcion !== undefined) entity.descripcion = data.descripcion;
-  entity.updatedAt = context.now;
-  await em.persistAndFlush(entity);
-  return entity;
-};
-
-export const deleteIncidencia = async (id: EntityId, context: AuthorizationContext): Promise<Incidencia | null> => {
-  requireBusinessAuthorization(context);
-  const em = getEntityManager();
-  const entity = await em.findOne(Incidencia, { $and: [{ id: parseId(id) }, incidenceScope(context, AccionPermiso.BORRAR)] });
-  if (!entity) return null;
-  entity.deletedAt = context.now;
   entity.updatedAt = context.now;
   await em.persistAndFlush(entity);
   return entity;

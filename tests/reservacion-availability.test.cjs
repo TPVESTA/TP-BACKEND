@@ -84,11 +84,11 @@ test('usa medianoche de Buenos Aires: incluye 03:00Z y excluye 03:00Z del día s
   }
 });
 
-test('permite otro espacio, otro día, reservas canceladas, finalizadas y dadas de baja', async () => {
+test('permite otro espacio, otro día, reservas canceladas y finalizadas', async () => {
   for (const options of [
     { areaComun: area(201) },
     { fechaReservacion: new Date('2099-10-07T12:00:00-03:00') },
-    { estado: E.CANCELADO }, { estado: E.FINALIZADO }, { deletedAt: context.now },
+    { estado: E.CANCELADO }, { estado: E.FINALIZADO },
   ]) {
     await withEM([booking(options)], async ({ saved }) => {
       assert.ok(await service.createReservacion(input(), context));

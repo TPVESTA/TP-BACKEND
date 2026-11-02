@@ -22,7 +22,7 @@ El comando prepara las tablas sin eliminar tablas ni columnas, **borra todos los
 - Un empleado administrativo y uno de mantenimiento en la administración que gestiona los 4 edificios.
 - Un sysadmin con rol global `SUPERADMIN`.
 
-Todas las cuentas tienen contraseña **`ROOT123`**, guardada como hash bcrypt.
+Todas las cuentas tienen contraseña **`ROOT123`**, guardada como hash bcrypt, y un teléfono ficticio de Rosario con el formato `341555XXXX` (10 dígitos, obligatorio en la columna `user.telefono`).
 
 | Perfil | Email |
 | --- | --- |

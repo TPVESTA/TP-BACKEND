@@ -16,7 +16,7 @@ import { requireGlobal, requireDelegableRole } from './assignment-authorization.
 import { findOrCreateOpenUsuarioRol } from './usuario-rol-link.helper';
 
 export interface CreateUserData {
-  cuil: string; nombre: string; apellido: string; email: string;
+  cuil: string; nombre: string; apellido: string; email: string; telefono: string;
   fechaNacimiento: Date; password: string; estado: boolean; rolId: EntityId;
   administracionId?: EntityId; propiedadId?: EntityId;
 }
@@ -81,6 +81,7 @@ export const createUser = async (data: CreateUserData, ctx: AuthorizationContext
     if (await em.findOne(User, { email: data.email }, { filters: { softDelete: false } })) throw new DomainValidationError('El email ya está registrado');
     const user = new User(data.nombre, data.apellido, data.email, data.fechaNacimiento, await hashPassword(data.password), data.estado);
     user.cuil = data.cuil;
+    user.telefono = data.telefono;
     em.persist(user);
     const usuarioRol = await findOrCreateOpenUsuarioRol(em, user, role, ctx.now, ctx.now);
     if (administracion) {
@@ -108,7 +109,7 @@ const applyUpdate = async (em: EntityManager, user: User, data: UpdateUserData):
     if (existing) throw new DomainValidationError('El email ya está registrado');
     user.email = data.email;
   }
-  for (const field of ['cuil', 'nombre', 'apellido', 'fechaNacimiento', 'estado'] as const) {
+  for (const field of ['cuil', 'nombre', 'apellido', 'telefono', 'fechaNacimiento', 'estado'] as const) {
     if (data[field] !== undefined) Object.assign(user, { [field]: data[field] });
   }
   if (data.password !== undefined) user.password = await hashPassword(data.password);
@@ -126,7 +127,7 @@ export const updateUser = async (id: EntityId, data: UpdateUserData, ctx: Author
   return applyUpdate(em, user, data);
 };
 export const updateOwnProfile = async (data: UpdateUserData, ctx: AuthorizationContext): Promise<User | null> => {
-  const allowed = ['cuil', 'nombre', 'apellido', 'email', 'fechaNacimiento', 'password'];
+  const allowed = ['cuil', 'nombre', 'apellido', 'email', 'telefono', 'fechaNacimiento', 'password'];
   if (Object.keys(data).some(field => !allowed.includes(field))) throw new AuthorizationError('Campo no permitido en el perfil personal.');
   const em = getEntityManager();
   const user = await em.findOne(User, { id: ctx.usuarioId, estado: true });

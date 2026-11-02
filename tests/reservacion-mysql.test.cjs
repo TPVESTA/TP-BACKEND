@@ -44,7 +44,7 @@ test('reservas exclusivas con transacciones y conexiones MySQL reales', {
       nroUnidad: `SUM-${id}`, mtCuadrados: 50, descripcion: 'Espacio de pruebas', edificio, tipoUnidad,
     }));
     const users = [1, 2].map(id => Object.assign(new User('Usuario', 'Prueba', `test${id}@example.test`,
-      new Date('2000-01-01'), 'unused-test-password', true), { cuil: `2012345678${id}` }));
+      new Date('2000-01-01'), 'unused-test-password', true), { cuil: `2012345678${id}`, telefono: `341555000${id}` }));
     await em.persistAndFlush([...areas, ...users]);
     const context = userId => ({ usuarioId: userId, now: new Date('2099-10-01T12:00:00Z'), grants: [{
       rolId: 1, rolCodigo: null, ambito: 'GLOBAL', edificioIds: [], permisos: [{
@@ -72,7 +72,7 @@ test('reservas exclusivas con transacciones y conexiones MySQL reales', {
       return { status: response.status, body: await response.json() };
     };
     const reset = () => orm.em.fork().nativeDelete(Reservacion, {});
-    const count = () => orm.em.fork().count(Reservacion, { estado: 'Reservado', deletedAt: null });
+    const count = () => orm.em.fork().count(Reservacion, { estado: 'Reservado' });
 
     await t.test('diez altas simultáneas en un área vacía confirman una reserva y rechazan nueve con 409', async () => {
       const results = await Promise.all(Array.from({ length: 10 }, (_, i) => request('POST', '', input(), i % 2)));

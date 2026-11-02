@@ -25,9 +25,5 @@ router.put('/:id',
   validate({ location: 'body', schema: updateReservacionSchema }),
   controller.updateReservacion
 );
-router.delete('/:id',
-  validate({ location: 'params', schema: idParamSchema }),
-  controller.deleteReservacion
-);
 
 export default router;

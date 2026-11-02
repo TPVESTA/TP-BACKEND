@@ -192,7 +192,7 @@ test('IDs solo aceptan enteros positivos seguros o digitos textuales', () => {
   assert.ifError(common.idParamSchema.validate({ id: 12 }, options).error);
 });
 test('usuarios: contrato real, false, fecha, formato fiscal, email y contrasena', () => {
-  const data = { cuil: samples.cuil, nombre: ' Ana ', apellido: 'Perez', email: samples.email,
+  const data = { cuil: samples.cuil, nombre: ' Ana ', apellido: 'Perez', email: samples.email, telefono: '3415551234',
     fechaNacimiento: '2000-01-01', password: ' clave123 ', estado: false };
   const register = user.registerUserSchema.validate(data, options);
   assert.ifError(register.error);
@@ -212,6 +212,7 @@ test('usuarios: contrato real, false, fecha, formato fiscal, email y contrasena'
   assert.ok(user.updateUserSchema.validate({ name: 'Ana' }, options).error);
   for (const patch of [{ estado: 'false' }, { cuil: '12' }, { cuil: 20123456789 },
     { email: 'no-email' }, { fechaNacimiento: '2999-01-01' }, { nombre: ' ' },
+    { telefono: '341-555-1234' }, { telefono: '1234567' }, { telefono: '1'.repeat(16) },
     { password: '123' }, { password: 'a'.repeat(19) }, {}]) {
     assert.ok(user.updateUserSchema.validate(patch, options).error, JSON.stringify(patch));
   }
@@ -246,7 +247,7 @@ test('numeros no se redondean ni aceptan negativos o fracciones en cantidades en
   assert.ok(rol.validate({ nombre: 'Rol', descripcion: 'Desc', ambito: 'OTRO' }, options).error);
 });
 test('validate entrega al controlador fechas convertidas y todos los campos del usuario', async () => {
-  const req = { body: { cuil: samples.cuil, nombre: 'Ana', apellido: 'Perez', email: samples.email,
+  const req = { body: { cuil: samples.cuil, nombre: 'Ana', apellido: 'Perez', email: samples.email, telefono: '3415551234',
     fechaNacimiento: '2000-01-01', password: 'clave123', estado: true, intruso: true } };
   let next = 0;
   const res = { status() { assert.fail('No debe rechazar'); } };

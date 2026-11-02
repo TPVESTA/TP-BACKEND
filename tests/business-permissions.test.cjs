@@ -79,12 +79,10 @@ test('schemas toman autor de la sesión y preservan contexto en las actualizacio
   assert.ifError(disponibilidadReservacionSchema.validate({ areaComunId: '200' }).error);
 });
 
-test('servicios niegan llamadas sin contexto y sin permiso; borrar no está habilitado por defecto', async () => {
+test('servicios niegan llamadas sin contexto', async () => {
   await withEM(new Map(), async ({ queries }) => {
     await assert.rejects(reservations.getAllReservaciones(), /contexto/);
     await assert.rejects(incidences.getAllIncidencias(), /contexto/);
-    await assert.rejects(reservations.deleteReservacion(500, resident()), /permiso/);
-    await assert.rejects(incidences.deleteIncidencia(600, administrative()), /permiso/);
     assert.equal(queries.length, 0);
   });
 });
@@ -210,19 +208,28 @@ test('residente edita descripción propia solo en Reportado; transiciones requie
   });
 });
 
-test('permisos personalizados de baja hacen baja lógica; registros dados de baja no se listan', async () => {
-  const item = reservation(), report = incidence();
-  const context = { usuarioId: 2, now, grants: [grant(AmbitoRol.ADMINISTRACION, [
-    permission(S.RESERVAS, { leer: true, borrar: true }), permission(S.INCIDENCIAS, { leer: true, borrar: true }),
-  ], { administracionId: 20 })] };
-  await withEM(new Map([[Reservacion, [item]], [Incidencia, [report]]]), async ({ persisted }) => {
-    await reservations.deleteReservacion(500, context);
-    await incidences.deleteIncidencia(600, context);
-    assert.equal(item.deletedAt, now);
-    assert.equal(report.deletedAt, now);
-    assert.deepEqual(await reservations.getAllReservaciones(context), []);
-    assert.deepEqual(await incidences.getAllIncidencias(context), []);
-    assert.equal(persisted.length, 2);
+test('reservas e incidencias no tienen baja: no existe el servicio ni la ruta DELETE', () => {
+  for (const [service, method, name] of [[reservations, 'deleteReservacion', 'reservacion'], [incidences, 'deleteIncidencia', 'incidencia']]) {
+    assert.equal(method in service, false, method);
+    assert.equal(method in require(`../src/controllers/${name}.controller`), false, method);
+    const routes = require(`../src/routes/${name}.routes`).default;
+    assert.equal(routes.stack.some(layer => layer.route?.methods?.delete), false, name);
+  }
+});
+
+test('una incidencia abierta puede cancelarse; Finalizado y Cancelado son finales', async () => {
+  const reported = incidence(), reviewing = incidence({ id: 601, estado: EstadoIncidencia.EN_REVISION });
+  const closed = incidence({ id: 602, estado: EstadoIncidencia.FINALIZADO });
+  await withEM(new Map([[Incidencia, [reported, reviewing, closed]]]), async () => {
+    await assert.rejects(incidences.updateIncidencia(600, { estado: EstadoIncidencia.CANCELADO }, resident()), /permiso/);
+    await incidences.updateIncidencia(600, { estado: EstadoIncidencia.CANCELADO }, administrative());
+    assert.equal(reported.estado, EstadoIncidencia.CANCELADO);
+    assert.equal(reported.closedAt, now);
+    await incidences.updateIncidencia(601, { estado: EstadoIncidencia.CANCELADO }, administrative());
+    assert.equal(reviewing.estado, EstadoIncidencia.CANCELADO);
+    await assert.rejects(incidences.updateIncidencia(602, { estado: EstadoIncidencia.CANCELADO }, administrative()), /secuencia/);
+    await assert.rejects(incidences.updateIncidencia(600, { estado: EstadoIncidencia.EN_REVISION }, administrative()), /secuencia/);
+    assert.equal(closed.estado, EstadoIncidencia.FINALIZADO);
   });
 });
 
@@ -244,12 +251,10 @@ test('todas las respuestas de reservas/incidencias proyectan autor sin datos sen
     [reservations, 'getReservacionById', reservationController.getReservacion, booking],
     [reservations, 'createReservacion', reservationController.createReservacion, booking],
     [reservations, 'updateReservacion', reservationController.updateReservacion, booking],
-    [reservations, 'deleteReservacion', reservationController.deleteReservacion, booking],
     [incidences, 'getAllIncidencias', incidenceController.getIncidencias, [report]],
     [incidences, 'getIncidenciaById', incidenceController.getIncidencia, report],
     [incidences, 'createIncidencia', incidenceController.createIncidencia, report],
     [incidences, 'updateIncidencia', incidenceController.updateIncidencia, report],
-    [incidences, 'deleteIncidencia', incidenceController.deleteIncidencia, report],
   ];
   for (const [service, method, controller, result] of checks) {
     const original = service[method];

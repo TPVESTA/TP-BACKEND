@@ -1,10 +1,9 @@
-import { Entity, PrimaryKey, Property, ManyToOne, Rel, Enum, Filter } from '@mikro-orm/core';
+import { Entity, PrimaryKey, Property, ManyToOne, Rel, Enum } from '@mikro-orm/core';
 import { EstadoIncidencia } from './EstadoIncidencia';
 import { User } from './User';
 import { Unidad } from './Unidad';
 import { Propiedad } from './Propiedad';
 
-@Filter({ name: 'softDelete', cond: { deletedAt: null }, default: true })
 @Entity({ tableName: 'incidencia' })
 export class Incidencia {
   @PrimaryKey()
@@ -15,9 +14,6 @@ export class Incidencia {
 
   @Property({ onUpdate: () => new Date() })
   updatedAt: Date = new Date();
-
-  @Property({ type: 'datetime', nullable: true })
-  deletedAt: Date | null = null;
 
   @Property({ type: 'datetime', nullable: true })
   closedAt: Date | null = null;

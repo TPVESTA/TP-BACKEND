@@ -54,16 +54,3 @@ export const updateIncidencia = async (req: Request, res: Response): Promise<voi
     handleControllerError(res, error, 'updateIncidencia');
   }
 };
-
-export const deleteIncidencia = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const result = await service.deleteIncidencia(String(req.params.id), requireAuthorization(req));
-    if (!result) {
-      ResponseHelper.notFound(res, 'Incidencia no encontrada');
-      return;
-    }
-    ResponseHelper.success(res, serializeIncidencia(result), 'Incidencia eliminada exitosamente');
-  } catch (error: unknown) {
-    handleControllerError(res, error, 'deleteIncidencia');
-  }
-};

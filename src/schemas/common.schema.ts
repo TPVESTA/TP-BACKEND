@@ -21,6 +21,8 @@ export const descripcionSchema = Joi.string().trim().min(1);
 export const emailSchema = Joi.string().trim().email({ tlds: { allow: false } }).max(255);
 export const identificacionFiscalSchema = Joi.string().trim().pattern(/^\d{11}$/)
   .messages({ 'string.pattern.base': '{#label} debe contener 11 dígitos sin guiones' });
+export const telefonoSchema = Joi.string().trim().pattern(/^\d{8,15}$/)
+  .messages({ 'string.pattern.base': '{#label} debe contener entre 8 y 15 dígitos sin espacios ni guiones' });
 export const fechaSchema = Joi.date().iso();
 export const enteroNoNegativoSchema = Joi.number().integer().min(0).max(2147483647).strict();
 

@@ -56,7 +56,6 @@ const requireAvailableDay = async (
   const occupied = await em.findOne(Reservacion, {
     areaComun: areaComunId,
     estado: EstadoReservacion.RESERVADO,
-    deletedAt: null,
     fechaReservacion: { $gte: start, $lt: end },
     ...(excludeId === undefined ? {} : { id: { $ne: excludeId } }),
   });
@@ -76,7 +75,7 @@ const reservationScope = (context: AuthorizationContext, action: AccionPermiso):
   requireBusinessAuthorization(context);
   const grants = matchingGrants(context, SeccionPermiso.RESERVAS, action);
   if (!grants.length) throw new AuthorizationError('No tiene permiso para esta operación sobre reservas.');
-  if (grants.some(grant => grant.ambito === AmbitoRol.GLOBAL)) return { deletedAt: null };
+  if (grants.some(grant => grant.ambito === AmbitoRol.GLOBAL)) return {};
   const clauses: FilterQuery<Reservacion>[] = [];
   for (const grant of grants) {
     if (!grant.edificioIds.length) continue;
@@ -87,7 +86,7 @@ const reservationScope = (context: AuthorizationContext, action: AccionPermiso):
     }
   }
   if (!clauses.length) throw new AuthorizationError('No tiene un ámbito vigente para esta operación.');
-  return { deletedAt: null, $or: clauses };
+  return { $or: clauses };
 };
 
 const occupiedSlot = (entity: Reservacion): ReservaOcupacion => ({
@@ -131,7 +130,7 @@ export const getDisponibilidadReservaciones = async (areaComunId: EntityId, cont
   if (!hasPermission(context, SeccionPermiso.RESERVAS, AccionPermiso.DISPONIBILIDAD, { edificioId: area.edificio.id })) {
     throw new AuthorizationError('No tiene permiso para consultar disponibilidad en este edificio.');
   }
-  const entities = await em.find(Reservacion, { areaComun: area.id, deletedAt: null, estado: { $ne: EstadoReservacion.CANCELADO } }, {
+  const entities = await em.find(Reservacion, { areaComun: area.id, estado: { $ne: EstadoReservacion.CANCELADO } }, {
     populate: ['areaComun'],
   });
   for (const entity of entities) await finalizarSiVencida(em, entity, context.now);
@@ -211,15 +210,4 @@ export const updateReservacion = async (id: EntityId, data: UpdateReservacionDat
     await em.persistAndFlush(entity);
     return entity;
   }, { isolationLevel: IsolationLevel.READ_COMMITTED });
-};
-
-export const deleteReservacion = async (id: EntityId, context: AuthorizationContext): Promise<Reservacion | null> => {
-  requireBusinessAuthorization(context);
-  const em = getEntityManager();
-  const entity = await em.findOne(Reservacion, { $and: [{ id: parseId(id) }, reservationScope(context, AccionPermiso.BORRAR)] });
-  if (!entity) return null;
-  entity.deletedAt = context.now;
-  entity.updatedAt = context.now;
-  await em.persistAndFlush(entity);
-  return entity;
 };

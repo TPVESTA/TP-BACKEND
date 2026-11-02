@@ -1,7 +1,7 @@
 ﻿import Joi from 'joi';
 import {
   createSchema, updateSchema, nombrePersonaSchema, emailSchema,
-  identificacionFiscalSchema, fechaSchema, idSchema
+  identificacionFiscalSchema, fechaSchema, idSchema, telefonoSchema
 } from './common.schema';
 
 // Se conserva la política de contraseñas existente, sin recortar espacios.
@@ -11,6 +11,7 @@ const fields = {
   nombre: nombrePersonaSchema,
   apellido: nombrePersonaSchema,
   email: emailSchema,
+  telefono: telefonoSchema,
   fechaNacimiento: fechaSchema.max('now'),
   password: passwordSchema,
   estado: Joi.boolean().strict()

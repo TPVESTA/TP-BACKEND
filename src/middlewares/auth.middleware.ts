@@ -10,6 +10,7 @@ declare global {
         nombre: string;
         apellido: string;
         email: string;
+        telefono: string;
         fechaNacimiento: Date;
         estado: boolean;
       };
@@ -31,7 +32,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     }
     req.user = {
       id: user.id, nombre: user.nombre, apellido: user.apellido,
-      email: user.email, fechaNacimiento: user.fechaNacimiento, estado: user.estado
+      email: user.email, telefono: user.telefono, fechaNacimiento: user.fechaNacimiento, estado: user.estado
     };
   } catch (error: unknown) {
     next(error);
