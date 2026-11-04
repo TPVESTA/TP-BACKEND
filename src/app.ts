@@ -11,6 +11,14 @@ import { errorMiddleware, notFoundMiddleware } from './middlewares/error.middlew
 
 const app: express.Application = express();
 const dbManager = DatabaseManager.getInstance();
+let ormPromise: ReturnType<typeof dbManager.initialize> | undefined;
+
+const getORM = (): ReturnType<typeof dbManager.initialize> => {
+  if (!ormPromise) {
+    ormPromise = dbManager.initialize();
+  }
+  return ormPromise;
+};
 
 // Middleware de logger personalizado
 const logger = (req: Request, res: Response, next: NextFunction): void => {
@@ -31,30 +39,13 @@ app.get('/', (req: Request, res: Response) => {
 });
 const PORT = Number(process.env.PORT) || 3000;
 
-// Función para inicializar la aplicación
-const initializeApp = async (): Promise<void> => {
-  try {
-    // Inicializar la base de datos
-    const orm = await dbManager.initialize();
-    
-    // El contexto debe registrarse antes de las rutas.
-    app.use((req: Request, res: Response, next: NextFunction) => {
-      RequestContext.create(orm.em, next);
-    });
-    
-    app.use('/api', routes);
-    app.use(notFoundMiddleware);
-    app.use(errorMiddleware);
-    
-    // Iniciar el servidor
-    app.listen(PORT, () => {
-      console.log(`Servidor corriendo en http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error('Error al inicializar la aplicación:', error);
-    process.exit(1);
-  }
-};
+app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+  getORM()
+    .then(orm => RequestContext.create(orm.em, next))
+    .catch(next);
+}, routes);
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
 
 // Manejar el cierre graceful de la aplicación
 process.on('SIGINT', async () => {
@@ -63,7 +54,17 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-// Inicializar la aplicación
-initializeApp();
+if (require.main === module) {
+  getORM()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Servidor corriendo en http://localhost:${PORT}`);
+      });
+    })
+    .catch(error => {
+      console.error('Error al inicializar la aplicación:', error);
+      process.exit(1);
+    });
+}
 
 export default app;

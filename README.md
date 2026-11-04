@@ -18,6 +18,15 @@ autenticación con JWT. El frontend está en `TP-FRONTEND/consorcioapp`.
 5. Opcional: `npm run seed` carga datos de prueba de Rosario y **reemplaza los
    datos existentes**; ver [docs/seed.md](docs/seed.md).
 
+## Despliegue en Vercel
+
+El backend exporta la aplicación Express para que Vercel la ejecute como una
+Function; localmente, `npm run dev` y `npm start` siguen iniciando el servidor.
+Configurar `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` y
+`JWT_SECRET` en las variables de entorno del proyecto. La conexión a MySQL se
+inicializa al atender la primera solicitud bajo `/api`, antes de despacharla a
+las rutas.
+
 ## Scripts
 
 | Script | Uso |
