@@ -7,7 +7,7 @@ const { TipoUnidad } = require('../src/entities/TipoUnidad');
 const { requireAmbitoUnidad } = require('../src/services/ambito-unidad.helper');
 const service = require('../src/services/tipo-unidad.service');
 const manager = require('../src/database/DatabaseManager').default.getInstance();
-const { getDefaultRolePermissions } = require('../src/services/permission-seed.service');
+const { getDefaultRolePermissions } = require('../src/services/authorization/permission-seed.service');
 const superadminContext = {
   usuarioId: 1, now: new Date(), grants: [{
     rolId: 1, rolCodigo: 'SUPERADMIN', ambito: 'GLOBAL', edificioIds: [],

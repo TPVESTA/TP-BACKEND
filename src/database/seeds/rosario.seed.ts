@@ -18,7 +18,7 @@ import { Unidad } from "../../entities/Unidad";
 import { User } from "../../entities/User";
 import { UsuarioRol } from "../../entities/UsuarioRol";
 import { UsuarioRolPropiedad } from "../../entities/UsuarioRolPropiedad";
-import { seedDefaultPermissions } from "../../services/permission-seed.service";
+import { seedDefaultPermissions } from "../../services/authorization/permission-seed.service";
 
 const buildings = [
   { nombre: "Edificio Parque Independencia", direccion: "Av. Pellegrini 1850" },

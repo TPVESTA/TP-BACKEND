@@ -11,8 +11,8 @@ import { DomainValidationError } from '../errors/domain-validation.error';
 import { AuthorizationError } from '../errors/authorization.error';
 import { hashPassword } from './auth.service';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
-import { AuthorizationContext, authorizedScope, requirePermission } from './authorization.service';
-import { requireGlobal, requireDelegableRole } from './assignment-authorization.helper';
+import { AuthorizationContext, authorizedScope, requirePermission } from './authorization/authorization.service';
+import { requireGlobal, requireDelegableRole } from './authorization/assignment-authorization.helper';
 import { findOrCreateOpenUsuarioRol } from './usuario-rol-link.helper';
 
 export interface CreateUserData {
@@ -126,11 +126,12 @@ export const updateUser = async (id: EntityId, data: UpdateUserData, ctx: Author
   if (data.estado !== undefined) requireGlobal(ctx, S.USUARIOS, A.DESHABILITAR);
   return applyUpdate(em, user, data);
 };
-export const updateOwnProfile = async (data: UpdateUserData, ctx: AuthorizationContext): Promise<User | null> => {
+// La cuenta propia no requiere un rol de negocio: alcanza con la identidad del token.
+export const updateOwnProfile = async (data: UpdateUserData, usuarioId: EntityId): Promise<User | null> => {
   const allowed = ['cuil', 'nombre', 'apellido', 'email', 'telefono', 'fechaNacimiento', 'password'];
   if (Object.keys(data).some(field => !allowed.includes(field))) throw new AuthorizationError('Campo no permitido en el perfil personal.');
   const em = getEntityManager();
-  const user = await em.findOne(User, { id: ctx.usuarioId, estado: true });
+  const user = await em.findOne(User, { id: parseId(usuarioId), estado: true });
   return user ? applyUpdate(em, user, data) : null;
 };
 export const deleteUser = async (id: EntityId, ctx: AuthorizationContext): Promise<User | null> => {

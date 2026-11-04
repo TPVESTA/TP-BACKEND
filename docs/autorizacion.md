@@ -19,7 +19,7 @@ Una asignación global está vigente cuando `beginAt <= ahora` y `endAt` es nulo
 
 Los roles de propiedad también pueden consultar su propiedad, edificio, áreas comunes y catálogos. Mantenimiento consulta edificios y áreas comunes, sin acceso a propiedades privadas, incluso a través de `/unidades`. Administrativo consulta la estructura de sus edificios. Las mutaciones de estructura requieren permisos explícitos; los cuatro roles iniciales no los tienen.
 
-`SUPERADMIN` es un rol GLOBAL para configurar permisos, vincular administraciones con edificios y preparar los datos iniciales. Crear administraciones/edificios, editar catálogos, configurar roles y conceder roles globales requieren permisos globales.
+`SUPERADMIN` es un rol GLOBAL para vincular administraciones con edificios, asignar roles y preparar los datos iniciales. Crear administraciones/edificios, editar catálogos y conceder roles globales requieren permisos globales. Desde el 28/10/2026 la API no crea, edita ni borra roles ni modifica su matriz de permisos: los roles canónicos y sus permisos iniciales los carga el arranque (`src/services/authorization/permission-seed.service.ts`).
 
 Los permisos de varios roles se combinan solamente dentro de cada contexto. Un rol en la propiedad A no concede acceso a registros de B. Un empleo en una administración solamente abarca sus edificios con vínculo `AdminEdificio` vigente.
 
@@ -32,7 +32,7 @@ El arranque usa el mecanismo de actualización de esquema que ya tenía el proye
 3. Vaciar la variable después del bootstrap. Incluso si se deja configurada, no restaura una asignación global posteriormente revocada.
 4. Con la cuenta global, consultar `/api/roles` y crear las asignaciones apropiadas mediante `/api/usuarios-roles-propiedad` y `/api/empleados`.
 
-**Los roles anteriores sin código no reciben privilegios automáticamente por su nombre.** Conservan sus asignaciones históricas, pero hace falta configurar deliberadamente sus permisos o revocar esas asignaciones y crear otras hacia los roles iniciales. No se modifica `.env` ni se elige una cuenta privilegiada automáticamente.
+**Los roles anteriores sin código no reciben privilegios automáticamente por su nombre.** Conservan sus asignaciones históricas, pero hace falta cargar deliberadamente sus permisos en `rol_permiso` (la API no edita la matriz) o revocar esas asignaciones y crear otras hacia los roles iniciales. No se modifica `.env` ni se elige una cuenta privilegiada automáticamente.
 
 Las reservas y las incidencias nuevas guardan la propiedad de origen. Si el usuario tiene más de una propiedad elegible en el edificio, debe enviar `propiedadId` al crear. Para incidencias sobre una unidad privada, el origen es esa misma propiedad. Las reservas con origen de propiedad no pueden trasladarse a otro edificio.
 
@@ -42,10 +42,10 @@ Las reservas antiguas y las incidencias antiguas sobre áreas comunes tienen ori
 
 - `GET /api/auth/permisos`: devuelve los roles, ámbitos, IDs de contexto y permisos del usuario autenticado. El frontend puede combinar los permisos de los roles del contexto seleccionado; el backend vuelve a comprobar cada operación.
 - `PUT /api/auth/profile`: permite editar campos personales propios, incluido email y contraseña; rechaza `estado` y campos desconocidos. No requiere un rol de negocio.
-- `PUT /api/roles/:id/permisos`: reemplaza la matriz de un rol dentro de una transacción. Requiere permiso global de edición de roles. Una lista vacía revoca todos sus permisos.
+- `GET /api/roles` y `GET /api/roles/:id`: consultan los roles con su matriz de permisos. Son las únicas rutas de roles.
 - `GET /api/reservaciones/disponibilidad?areaComunId=123`: devuelve ocupación sin autor ni descripción. Requiere el permiso específico de disponibilidad en el edificio.
 
-Ejemplo de configuración de un rol:
+Formato de los permisos de un rol, por sección (`/api/auth/permisos` los devuelve así en cada contexto; `/api/roles` agrega el `id` de cada fila de `rol_permiso`):
 
 ```json
 {
@@ -62,7 +62,7 @@ Ejemplo de configuración de un rol:
 }
 ```
 
-Reservas e incidencias toman el autor de la sesión: `usuarioId` está prohibido en sus altas. Una incidencia conserva su autor y unidad. Cambiar su estado exige `CAMBIAR_ESTADO` y respeta Reportado → En revisión → Finalizado; mientras esté en Reportado o En revisión también puede pasar a Cancelado. Finalizado y Cancelado son estados finales y completan `closedAt`. Reservas e incidencias no tienen baja: no existen `DELETE /api/reservaciones/:id` ni `DELETE /api/incidencias/:id`. Cancelar una reserva usa su estado.
+Reservas e incidencias toman el autor de la sesión: `usuarioId` está prohibido en sus altas. Una incidencia conserva su autor y unidad. Cambiar su estado exige `CAMBIAR_ESTADO` y respeta Reportado → En revisión → Finalizado; mientras esté en Reportado o En revisión también puede pasar a Cancelado. Finalizado y Cancelado son estados finales y completan `closedAt`. Cada edición de una incidencia se hace en una transacción (`READ COMMITTED`) que primero bloquea solo su fila (`SELECT … FOR UPDATE`, sin joins) y después la relee con el ámbito del usuario: dos cambios simultáneos se ejecutan uno después del otro y el segundo se valida contra el estado que dejó el primero. Reservas e incidencias no tienen baja: no existen `DELETE /api/reservaciones/:id` ni `DELETE /api/incidencias/:id`. Cancelar una reserva usa su estado.
 
 ## Gestión de usuarios y asignaciones
 
@@ -72,7 +72,7 @@ El listado de usuarios del Administrativo reúne dos caminos vigentes: empleados
 
 El Administrativo puede editar los datos personales permitidos de usuarios de su ámbito. Cambiar el email o contraseña de otra cuenta requiere edición global de usuarios; modificar `estado` requiere el permiso global de deshabilitación. La edición propia está disponible por `/auth/profile`.
 
-Asignar/revocar roles requiere permisos independientes de gestionar usuarios. El Administrativo solamente delega los roles iniciales de propiedad dentro de sus edificios, sin superar su matriz inicial; los roles de administración no pueden contener permisos superiores a los propios en la administración destino. Los roles globales y la configuración de la matriz requieren gestión global.
+Asignar/revocar roles requiere permisos independientes de gestionar usuarios. El Administrativo solamente delega los roles iniciales de propiedad dentro de sus edificios, sin superar su matriz inicial; los roles de administración no pueden contener permisos superiores a los propios en la administración destino. Asignar roles globales requiere gestión global.
 
 Las asignaciones conservan su historia. `DELETE` finaliza su vigencia, incluso para asignaciones futuras, y no borra filas. Cambiar usuario, rol o contexto requiere revocar y crear otra asignación. Extender o reabrir vigencia exige permiso para asignar ese rol. Consultar, modificar o revocar una asignación requiere también permiso de lectura de asignaciones.
 

@@ -2,9 +2,9 @@ import { AdminEdificio } from '../entities/AdminEdificio';
 import { Administracion } from '../entities/Administracion';
 import { Edificio } from '../entities/Edificio';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
-import { AuthorizationContext } from './authorization.service';
+import { AuthorizationContext } from './authorization/authorization.service';
 import { AccionPermiso } from '../entities/Permiso';
-import { administrationBuildingWhere, requireGlobalStructure } from './structure-authorization.helper';
+import { administrationBuildingWhere, requireGlobalStructure } from './authorization/structure-authorization.helper';
 
 export interface CreateAdminEdificioData {
   beginAt?: Date;

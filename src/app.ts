@@ -29,7 +29,7 @@ app.use(logger);
 app.get('/', (req: Request, res: Response) => {
   res.json(messages.welcomeMessage);
 });
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Función para inicializar la aplicación
 const initializeApp = async (): Promise<void> => {

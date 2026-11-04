@@ -1,4 +1,4 @@
-﻿import { FilterQuery } from '@mikro-orm/core';
+﻿import { FilterQuery, IsolationLevel, LockMode } from '@mikro-orm/core';
 import { Incidencia } from '../entities/Incidencia';
 import { User } from '../entities/User';
 import { Unidad } from '../entities/Unidad';
@@ -8,8 +8,8 @@ import { EstadoIncidencia } from '../entities/EstadoIncidencia';
 import { AccionPermiso, SeccionPermiso } from '../entities/Permiso';
 import { AuthorizationError } from '../errors/authorization.error';
 import { DomainValidationError } from '../errors/domain-validation.error';
-import { AuthorizationContext, matchingGrants } from './authorization.service';
-import { requireBusinessAuthorization, selectOriginProperty } from './business-authorization.helper';
+import { AuthorizationContext, matchingGrants } from './authorization/authorization.service';
+import { requireBusinessAuthorization, selectOriginProperty } from './authorization/business-authorization.helper';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
 
 export interface CreateIncidenciaData {
@@ -92,38 +92,43 @@ export const updateIncidencia = async (id: EntityId, data: UpdateIncidenciaData,
     throw new DomainValidationError('No se puede cambiar el autor, la unidad ni la propiedad de origen de una incidencia.');
   }
   if ('closedAt' in data) throw new DomainValidationError('La fecha de cierre se establece automáticamente al finalizar.');
-  const em = getEntityManager();
-  const entity = await em.findOne(Incidencia, { $and: [{ id: parseId(id) }, incidenceScope(context, AccionPermiso.EDITAR)] }, {
-    populate: ['usuario', 'unidad.edificio', 'propiedadOrigen'],
-  });
-  if (!entity) return null;
-  const target = { edificioId: entity.unidad.edificio.id };
-  const management = matchingGrants(context, SeccionPermiso.INCIDENCIAS, AccionPermiso.EDITAR, target)
-    .some(grant => grant.ambito === AmbitoRol.GLOBAL || grant.ambito === AmbitoRol.ADMINISTRACION);
-  if (!management && entity.estado !== EstadoIncidencia.REPORTADO) {
-    throw new DomainValidationError('Solo puede editar la descripción de sus incidencias en estado Reportado.');
-  }
-  if (data.estado !== undefined) {
-    const stateGrants = matchingGrants(context, SeccionPermiso.INCIDENCIAS, AccionPermiso.CAMBIAR_ESTADO, target);
-    if (!stateGrants.some(grant => grant.ambito === AmbitoRol.GLOBAL || grant.ambito === AmbitoRol.ADMINISTRACION)) {
-      throw new AuthorizationError('No tiene permiso para cambiar el estado de esta incidencia.');
+  const where = { $and: [{ id: parseId(id) }, incidenceScope(context, AccionPermiso.EDITAR)] };
+  // La fila queda bloqueada hasta el commit: dos cambios simultáneos no validan
+  // contra el mismo estado anterior. Se bloquea solo la incidencia: sin relaciones
+  // ni los joins que agregan el ámbito o los filtros de baja lógica (filters: false).
+  // Con el bloqueo tomado, se relee aplicando el ámbito y los filtros.
+  return getEntityManager().transactional(async em => {
+    await em.findOne(Incidencia, { id: parseId(id) }, { lockMode: LockMode.PESSIMISTIC_WRITE, filters: false });
+    const entity = await em.findOne(Incidencia, where, { populate: ['usuario', 'unidad.edificio', 'propiedadOrigen'], refresh: true });
+    if (!entity) return null;
+    const target = { edificioId: entity.unidad.edificio.id };
+    const management = matchingGrants(context, SeccionPermiso.INCIDENCIAS, AccionPermiso.EDITAR, target)
+      .some(grant => grant.ambito === AmbitoRol.GLOBAL || grant.ambito === AmbitoRol.ADMINISTRACION);
+    if (!management && entity.estado !== EstadoIncidencia.REPORTADO) {
+      throw new DomainValidationError('Solo puede editar la descripción de sus incidencias en estado Reportado.');
     }
-    const next = entity.estado === EstadoIncidencia.REPORTADO
-      ? EstadoIncidencia.EN_REVISION
-      : entity.estado === EstadoIncidencia.EN_REVISION ? EstadoIncidencia.FINALIZADO : undefined;
-    // Una incidencia abierta también puede cancelarse; Finalizado y Cancelado son estados finales.
-    const cancel = data.estado === EstadoIncidencia.CANCELADO && next !== undefined;
-    if (data.estado !== next && !cancel) {
-      throw new DomainValidationError('La secuencia permitida es Reportado → En revisión → Finalizado; una incidencia abierta también puede pasar a Cancelado.');
+    if (data.estado !== undefined) {
+      const stateGrants = matchingGrants(context, SeccionPermiso.INCIDENCIAS, AccionPermiso.CAMBIAR_ESTADO, target);
+      if (!stateGrants.some(grant => grant.ambito === AmbitoRol.GLOBAL || grant.ambito === AmbitoRol.ADMINISTRACION)) {
+        throw new AuthorizationError('No tiene permiso para cambiar el estado de esta incidencia.');
+      }
+      const next = entity.estado === EstadoIncidencia.REPORTADO
+        ? EstadoIncidencia.EN_REVISION
+        : entity.estado === EstadoIncidencia.EN_REVISION ? EstadoIncidencia.FINALIZADO : undefined;
+      // Una incidencia abierta también puede cancelarse; Finalizado y Cancelado son estados finales.
+      const cancel = data.estado === EstadoIncidencia.CANCELADO && next !== undefined;
+      if (data.estado !== next && !cancel) {
+        throw new DomainValidationError('La secuencia permitida es Reportado → En revisión → Finalizado; una incidencia abierta también puede pasar a Cancelado.');
+      }
     }
-  }
-  // Todas las validaciones preceden a la mutación de la entidad.
-  if (data.estado !== undefined) {
-    entity.estado = data.estado;
-    if (data.estado === EstadoIncidencia.FINALIZADO || data.estado === EstadoIncidencia.CANCELADO) entity.closedAt = context.now;
-  }
-  if (data.descripcion !== undefined) entity.descripcion = data.descripcion;
-  entity.updatedAt = context.now;
-  await em.persistAndFlush(entity);
-  return entity;
+    // Todas las validaciones preceden a la mutación de la entidad.
+    if (data.estado !== undefined) {
+      entity.estado = data.estado;
+      if (data.estado === EstadoIncidencia.FINALIZADO || data.estado === EstadoIncidencia.CANCELADO) entity.closedAt = context.now;
+    }
+    if (data.descripcion !== undefined) entity.descripcion = data.descripcion;
+    entity.updatedAt = context.now;
+    await em.persistAndFlush(entity);
+    return entity;
+  }, { isolationLevel: IsolationLevel.READ_COMMITTED });
 };

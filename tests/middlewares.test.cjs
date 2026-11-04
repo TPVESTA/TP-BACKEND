@@ -8,13 +8,13 @@ const jwt = require('jsonwebtoken');
 const auth = require('../src/services/auth.service');
 const users = require('../src/services/user.service');
 const manager = require('../src/database/DatabaseManager').default.getInstance();
-const { authMiddleware, optionalAuthMiddleware } = require('../src/middlewares/auth.middleware');
+const { authMiddleware } = require('../src/middlewares/auth.middleware');
 const { validate } = require('../src/middlewares/validate');
 const { errorMiddleware, notFoundMiddleware } = require('../src/middlewares/error.middleware');
 const { idParamSchema } = require('../src/schemas/common.schema');
 const routes = require('../src/routes').default;
 let server, base, token, person, originalLookup, originalList, originalORM, previousSecret;
-let lookup, listCalls = 0, lookupCalls = 0;
+let lookup, listCalls = 0, lookupCalls = 0, assignmentQueries = 0, entityLookups = 0;
 const secret = 'test-secret-only-for-middleware-tests';
 before(async () => {
   previousSecret = process.env.JWT_SECRET;
@@ -28,14 +28,17 @@ before(async () => {
   originalORM = manager.getORM;
   auth.getUserByIdForAuth = async () => { lookupCalls++; if (lookup instanceof Error) throw lookup; return lookup; };
   users.getAllUsers = async () => { listCalls++; return []; };
-  manager.getORM = () => ({ em: { fork: () => ({ findOne: async () => lookup }) } });
+  // La carga de permisos también consulta asignaciones: un usuario sin asignaciones no tiene permisos de negocio.
+  manager.getORM = () => ({ em: { fork: () => ({
+    findOne: async () => { entityLookups++; return lookup; },
+    find: async () => { assignmentQueries++; return []; },
+  }) } });
   token = auth.generateToken(1);
   const app = express();
   app.use(express.json({ limit: '1kb' }));
   app.get('/query', validate({ location: 'query', schema: Joi.object({ page: Joi.number().integer().positive().required() }) }),
     (req, res) => res.json(req.query));
   app.get('/params/:id', validate({ location: 'params', schema: idParamSchema }), (req, res) => res.json(req.params));
-  app.get('/optional', optionalAuthMiddleware, (req, res) => res.json({ user: req.user || null }));
   app.get('/validator-error', validate({ schema: { validateAsync: async () => { throw new Error('interno'); } } }), (req, res) => res.json({}));
   app.use('/api', routes);
   app.use(notFoundMiddleware);
@@ -126,11 +129,6 @@ test('fallos internos de autenticacion o configuracion responden 500 sin revelar
     assert.equal((await request('/api/auth/login', { method: 'POST', body: { email: person.email, password: 'clave123' } })).status, 500);
   } finally { lookup = person; process.env.JWT_SECRET = secret; }
 });
-test('auth opcional admite ausencia, exige validez cuando hay token y no oculta errores', async () => {
-  assert.equal((await request('/optional')).body.user, null);
-  assert.equal((await request('/optional', { bearer: 'Bearer ' + token })).body.user.id, 1);
-  assert.equal((await request('/optional', { bearer: 'Bearer roto' })).status, 401);
-});
 test('validate convierte params y query de Express 5, elimina desconocidos y responde 400', async () => {
   const query = await request('/query?page=2&extra=hola');
   assert.equal(query.status, 200);
@@ -146,6 +144,52 @@ test('errores JSON, limite de body y rutas inexistentes mantienen formato JSON',
   assert.equal((await request('/api/auth/login', { method: 'POST', body: { data: 'x'.repeat(2000) } })).status, 413);
   assert.equal((await request('/no-existe')).status, 404);
   assert.equal((await request('/api/no-existe', { bearer: 'Bearer ' + token })).status, 404);
+});
+test('solo /auth/permisos carga el contexto de autorizacion; el perfil usa la identidad del token', async t => {
+  const updates = [];
+  t.mock.method(users, 'updateOwnProfile', async (...args) => { updates.push(args); return { id: 1, nombre: 'Ana' }; });
+  const bearer = 'Bearer ' + token;
+  for (const [path, options] of [['/api/auth/profile', {}], ['/api/auth/verify', {}], ['/api/auth/profile', { method: 'PUT', body: { nombre: 'Ana' } }]]) {
+    const before = assignmentQueries;
+    assert.equal((await request(path, { bearer, ...options })).status, 200, path);
+    assert.equal(assignmentQueries, before, (options.method ?? 'GET') + ' ' + path + ' no consulta asignaciones');
+  }
+  assert.deepEqual(updates, [[{ nombre: 'Ana' }, 1]], 'edita solo la cuenta del token');
+  const before = assignmentQueries;
+  const permissions = await request('/api/auth/permisos', { bearer });
+  assert.equal(permissions.status, 200);
+  assert.deepEqual(permissions.body.data, { usuarioId: 1, contextos: [] });
+  assert.ok(assignmentQueries > before, '/auth/permisos consulta las asignaciones vigentes');
+  assert.equal((await request('/api/auth/profile', { method: 'PUT', body: { nombre: 'Ana' } })).status, 401);
+});
+test('cada peticion protegida lee al usuario una sola vez, al validar el token', async () => {
+  const bearer = 'Bearer ' + token;
+  for (const path of ['/api/auth/permisos', '/api/users']) {
+    const [authBefore, entityBefore, assignmentsBefore] = [lookupCalls, entityLookups, assignmentQueries];
+    assert.equal((await request(path, { bearer })).status, 200, path);
+    assert.equal(lookupCalls - authBefore, 1, path + ': authMiddleware lee al usuario');
+    assert.equal(entityLookups - entityBefore, 0, path + ': la carga de permisos no lo vuelve a leer');
+    assert.ok(assignmentQueries > assignmentsBefore, path + ': los permisos se cargan igual');
+  }
+  const previous = lookup;
+  lookup = { ...person, estado: false };
+  try {
+    const [authBefore, assignmentsBefore] = [lookupCalls, assignmentQueries];
+    assert.equal((await request('/api/auth/permisos', { bearer })).status, 401, 'una cuenta inactiva no llega a cargar permisos');
+    assert.equal(lookupCalls - authBefore, 1);
+    assert.equal(assignmentQueries, assignmentsBefore);
+  } finally { lookup = previous; }
+});
+test('las respuestas de la API no se guardan en cache, incluidas las de error', async () => {
+  const responses = [
+    await request('/api/auth/login', { method: 'POST', body: { email: 'ana@example.com', password: 'incorrecta' } }),
+    await request('/api/users'),
+    await request('/api/auth/profile', { bearer: 'Bearer ' + token }),
+    await request('/api/no-existe', { bearer: 'Bearer ' + token }),
+  ];
+  assert.deepEqual(responses.map(response => response.status), [401, 401, 200, 404]);
+  for (const response of responses) assert.equal(response.headers.get('cache-control'), 'no-store, private');
+  assert.equal((await request('/no-existe')).headers.get('cache-control'), null, 'fuera de /api no se modifica');
 });
 test('validate propaga errores no Joi al manejador global', async t => {
   t.mock.method(console, 'error', () => {});

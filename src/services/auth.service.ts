@@ -21,18 +21,31 @@ interface RegisterData {
   estado: boolean;
 }
 
+/** Datos de la cuenta que se devuelven al propio usuario (login, registro, perfil). */
+export interface PublicUser {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
+  fechaNacimiento: Date;
+  estado: boolean;
+}
+
 interface AuthResponse {
-  user: {
-    id: number;
-    nombre: string;
-    apellido: string;
-    email: string;
-    telefono: string;
-    fechaNacimiento: Date;
-    estado: boolean;
-  };
+  user: PublicUser;
   token: string;
 }
+
+export const toPublicUser = (user: User): PublicUser => ({
+  id: user.id,
+  nombre: user.nombre,
+  apellido: user.apellido,
+  email: user.email,
+  telefono: user.telefono,
+  fechaNacimiento: user.fechaNacimiento,
+  estado: user.estado,
+});
 
 const dbManager = DatabaseManager.getInstance();
 
@@ -122,18 +135,7 @@ export const register = async (userData: RegisterData): Promise<AuthResponse> =>
   // Generar token
   const token = generateToken(newUser.id);
 
-  return {
-    user: {
-      id: newUser.id,
-      nombre: newUser.nombre,
-      apellido: newUser.apellido,
-      email: newUser.email,
-      telefono: newUser.telefono,
-      fechaNacimiento: newUser.fechaNacimiento,
-      estado: newUser.estado
-    },
-    token
-  };
+  return { user: toPublicUser(newUser), token };
 };
 
 // Iniciar sesión
@@ -161,18 +163,7 @@ export const login = async (loginData: LoginData): Promise<AuthResponse> => {
   // Generar token
   const token = generateToken(user.id);
 
-  return {
-    user: {
-      id: user.id,
-      nombre: user.nombre,
-      apellido: user.apellido,
-      email: user.email,
-      telefono: user.telefono,
-      fechaNacimiento: user.fechaNacimiento,
-      estado: user.estado
-    },
-    token
-  };
+  return { user: toPublicUser(user), token };
 };
 
 // Obtener usuario por ID (para el middleware)

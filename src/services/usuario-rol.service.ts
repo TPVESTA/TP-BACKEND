@@ -4,8 +4,8 @@ import { Rol } from '../entities/Rol';
 
 import { AmbitoRol } from '../entities/AmbitoRol';
 import { SeccionPermiso as S, AccionPermiso as A } from '../entities/Permiso';
-import { AuthorizationContext, requirePermission } from './authorization.service';
-import { assignmentScope, requireGlobal, requireDelegableRole, revokeAssignment } from './assignment-authorization.helper';
+import { AuthorizationContext, requirePermission } from './authorization/authorization.service';
+import { assignmentScope, requireGlobal, requireDelegableRole, revokeAssignment } from './authorization/assignment-authorization.helper';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
 import { DomainValidationError } from '../errors/domain-validation.error';
 
@@ -19,8 +19,9 @@ const filter = (ctx: AuthorizationContext) => { requireGlobal(ctx, S.ASIGNACIONE
 const target = (entity: UsuarioRol) => ({});
 const populate = ["rol.permisos"] as const;
 
-export const getAllUsuariosRoles = async (ctx: AuthorizationContext): Promise<UsuarioRol[]> => {
-  return getEntityManager().find(UsuarioRol, filter(ctx), { populate: [...populate] });
+export const getAllUsuariosRoles = async (ctx: AuthorizationContext, usuarioId?: EntityId): Promise<UsuarioRol[]> => {
+  const where = usuarioId === undefined ? filter(ctx) : { ...filter(ctx), usuario: parseId(usuarioId) };
+  return getEntityManager().find(UsuarioRol, where, { populate: [...populate] });
 };
 export const getUsuarioRolById = async (id: EntityId, ctx: AuthorizationContext): Promise<UsuarioRol | null> => {
   return getEntityManager().findOne(UsuarioRol, { $and: [filter(ctx), { id: parseId(id) }] }, { populate: [...populate] });

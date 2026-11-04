@@ -4,13 +4,13 @@ import { Rol } from '../entities/Rol';
 import { Propiedad } from '../entities/Propiedad';
 import { AmbitoRol } from '../entities/AmbitoRol';
 import { SeccionPermiso as S, AccionPermiso as A } from '../entities/Permiso';
-import { AuthorizationContext, requirePermission } from './authorization.service';
-import { assignmentScope, requireDelegableRole, revokeAssignment } from './assignment-authorization.helper';
+import { AuthorizationContext, requirePermission } from './authorization/authorization.service';
+import { assignmentScope, requireDelegableRole, revokeAssignment } from './authorization/assignment-authorization.helper';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
 import { DomainValidationError } from '../errors/domain-validation.error';
 import { AuthorizationError } from '../errors/authorization.error';
 import { getUserById } from './user.service';
-import { authorizedScope } from './authorization.service';
+import { authorizedScope } from './authorization/authorization.service';
 import { findOrCreateOpenUsuarioRol } from './usuario-rol-link.helper';
 
 export interface CreateUsuarioRolPropiedadData {
@@ -23,8 +23,9 @@ const filter = (ctx: AuthorizationContext) => { const scope = assignmentScope(ct
 const target = (entity: UsuarioRolPropiedad) => ({ propiedadId: entity.propiedad.id, edificioId: entity.propiedad.edificio.id });
 const populate = ["usuarioRol.usuario", "usuarioRol.rol.permisos", "propiedad.edificio"] as const;
 
-export const getAllUsuariosRolesPropiedad = async (ctx: AuthorizationContext): Promise<UsuarioRolPropiedad[]> => {
-  return getEntityManager().find(UsuarioRolPropiedad, filter(ctx), { populate: [...populate], filters: { softDelete: false } });
+export const getAllUsuariosRolesPropiedad = async (ctx: AuthorizationContext, usuarioId?: EntityId): Promise<UsuarioRolPropiedad[]> => {
+  const where = usuarioId === undefined ? filter(ctx) : { ...filter(ctx), usuarioRol: { usuario: parseId(usuarioId) } };
+  return getEntityManager().find(UsuarioRolPropiedad, where, { populate: [...populate], filters: { softDelete: false } });
 };
 export const getUsuarioRolPropiedadById = async (id: EntityId, ctx: AuthorizationContext): Promise<UsuarioRolPropiedad | null> => {
   return getEntityManager().findOne(UsuarioRolPropiedad, { $and: [filter(ctx), { id: parseId(id) }] }, { populate: [...populate], filters: { softDelete: false } });

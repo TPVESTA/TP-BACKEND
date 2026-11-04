@@ -9,8 +9,8 @@ import { AccionPermiso, SeccionPermiso } from '../entities/Permiso';
 import { DomainValidationError } from '../errors/domain-validation.error';
 import { AuthorizationError } from '../errors/authorization.error';
 import { ConflictError } from '../errors/conflict.error';
-import { AuthorizationContext, hasPermission, matchingGrants } from './authorization.service';
-import { requireBusinessAuthorization, selectOriginProperty } from './business-authorization.helper';
+import { AuthorizationContext, hasPermission, matchingGrants } from './authorization/authorization.service';
+import { requireBusinessAuthorization, selectOriginProperty } from './authorization/business-authorization.helper';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
 
 export interface CreateReservacionData {
@@ -62,12 +62,16 @@ const requireAvailableDay = async (
   if (occupied) throw new ConflictError('El área común ya está reservada para ese día. Elegí otra fecha o espacio.');
 };
 
-const finalizarSiVencida = async (em: EntityManager, entity: Reservacion, now: Date): Promise<void> => {
-  if (entity.estado === EstadoReservacion.RESERVADO && diaReservacion(entity.fechaReservacion) < diaReservacion(now)) {
+// Las reservas cuyo día ya terminó pasan a Finalizado al consultarlas, todas en una sola escritura.
+const finalizarVencidas = async (em: EntityManager, entities: Reservacion[], now: Date): Promise<void> => {
+  const vencidas = entities.filter(entity =>
+    entity.estado === EstadoReservacion.RESERVADO && diaReservacion(entity.fechaReservacion) < diaReservacion(now));
+  if (!vencidas.length) return;
+  for (const entity of vencidas) {
     entity.estado = EstadoReservacion.FINALIZADO;
     entity.updatedAt = now;
-    await em.persistAndFlush(entity);
   }
+  await em.persistAndFlush(vencidas);
 };
 
 // El filtro se aplica en SQL, también en búsquedas por ID.
@@ -109,7 +113,7 @@ export const getAllReservaciones = async (context: AuthorizationContext): Promis
   const entities = await em.find(Reservacion, reservationScope(context, AccionPermiso.LEER), {
     populate: ['usuario', 'areaComun.edificio', 'propiedadOrigen'],
   });
-  for (const entity of entities) await finalizarSiVencida(em, entity, context.now);
+  await finalizarVencidas(em, entities, context.now);
   return entities.map(entity => visibleReservation(entity, context));
 };
 
@@ -119,7 +123,7 @@ export const getReservacionById = async (id: EntityId, context: AuthorizationCon
     populate: ['usuario', 'areaComun.edificio', 'propiedadOrigen'],
   });
   if (!entity) return null;
-  await finalizarSiVencida(em, entity, context.now);
+  await finalizarVencidas(em, [entity], context.now);
   return visibleReservation(entity, context);
 };
 
@@ -133,7 +137,7 @@ export const getDisponibilidadReservaciones = async (areaComunId: EntityId, cont
   const entities = await em.find(Reservacion, { areaComun: area.id, estado: { $ne: EstadoReservacion.CANCELADO } }, {
     populate: ['areaComun'],
   });
-  for (const entity of entities) await finalizarSiVencida(em, entity, context.now);
+  await finalizarVencidas(em, entities, context.now);
   return entities.map(occupiedSlot);
 };
 
@@ -175,7 +179,7 @@ export const updateReservacion = async (id: EntityId, data: UpdateReservacionDat
       lockMode: LockMode.PESSIMISTIC_WRITE, refresh: true, strategy: LoadStrategy.SELECT_IN,
     });
     if (!entity) return null;
-    await finalizarSiVencida(em, entity, context.now);
+    await finalizarVencidas(em, [entity], context.now);
     if (entity.estado !== EstadoReservacion.RESERVADO) {
       throw new DomainValidationError('Solo se puede modificar o cancelar una reserva en estado Reservado.');
     }

@@ -10,17 +10,29 @@ Solo entonces guarda los datos publicos en `req.user` y ejecuta `next()`.
 Login tambien rechaza usuarios desactivados. Desactivar o eliminar un usuario
 impide usar sus tokens anteriores en las siguientes peticiones.
 
-`optionalAuthMiddleware` permite omitir el encabezado. Si se envia un token,
-debe ser valido: no convierte errores de autenticacion en acceso anonimo.
-No se usa en las rutas privadas actuales.
+`authorizationMiddleware` se ejecuta despues y carga los permisos vigentes con
+`loadAuthorizationContext(id, em, { userVerified: true })`: reutiliza la
+verificacion que `authMiddleware` acaba de hacer y no vuelve a leer al usuario,
+asi cada peticion protegida lo consulta una sola vez. Llamada sin esa opcion, la
+funcion sigue leyendo al usuario y devuelve un contexto sin permisos si esta
+inactivo o dado de baja.
 
 En `routes/index.ts`, todas las rutas de negocio se montan despues de
 `router.use(authMiddleware)`. Esto incluye ahora los GET de usuarios.
 En el router de autenticacion, login y registro quedan antes del middleware;
-profile y verify quedan despues. La ruta informativa `/` sigue publica.
+profile (GET y PUT) y verify quedan despues. Esas tres rutas usan solo la
+identidad de `req.user` y no cargan permisos: el perfil propio no requiere un
+rol de negocio y `PUT /auth/profile` edita unicamente la cuenta del token.
+`GET /auth/permisos` es la unica ruta de ese router que usa
+`authorizationMiddleware`. La ruta informativa `/` sigue publica.
 
-La autenticacion no implementa permisos por rol, edificio o propiedad. Ese
-control debe definirse antes de restringir operaciones entre usuarios.
+`req.user` y las respuestas de login y registro comparten la misma proyeccion
+(`toPublicUser` en `auth.service.ts`): id, nombre, apellido, email, telefono,
+fecha de nacimiento y estado; nunca la contrasena.
+
+La autenticacion solo identifica al usuario. Los permisos por rol, edificio o
+propiedad los carga `authorizationMiddleware` y los aplica cada servicio; ver
+`autorizacion.md`.
 
 ## Validacion
 
@@ -57,4 +69,4 @@ tokens invalidos, usuarios desactivados, conversion de query, errores JSON,
 limites de body y respuestas sin informacion interna. No conectan a MySQL.
 
 Las rutas de todas las entidades estan montadas despues del middleware de
-autenticacion y usan sus schemas; ver `RUTAS.md`.
+autenticacion y usan sus schemas; ver `rutas.md`.

@@ -4,9 +4,11 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
 const auth = require('../src/services/auth.service');
+const authorization = require('../src/services/authorization/authorization.service');
 const routes = require('../src/routes').default;
 const { errorMiddleware, notFoundMiddleware } = require('../src/middlewares/error.middleware');
-const specs = [["administracion","Administracion","Administraciones","administraciones"],["edificio","Edificio","Edificios","edificios"],["localidad","Localidad","Localidades","localidades"],["tipo-unidad","TipoUnidad","TiposUnidad","tipos-unidad"],["unidad","Unidad","Unidades","unidades"],["propiedad","Propiedad","Propiedades","propiedades"],["area-comun","AreaComun","AreasComunes","areas-comunes"],["empleado","Empleado","Empleados","empleados"],["admin-edificio","AdminEdificio","AdminEdificios","admin-edificios"],["usuario-rol-propiedad","UsuarioRolPropiedad","UsuariosRolesPropiedad","usuarios-roles-propiedad"],["incidencia","Incidencia","Incidencias","incidencias"],["reservacion","Reservacion","Reservaciones","reservaciones"]];
+const specs = [["administracion","Administracion","Administraciones","administraciones"],["edificio","Edificio","Edificios","edificios"],["localidad","Localidad","Localidades","localidades"],["tipo-unidad","TipoUnidad","TiposUnidad","tipos-unidad"],["unidad","Unidad","Unidades","unidades"],["propiedad","Propiedad","Propiedades","propiedades"],["area-comun","AreaComun","AreasComunes","areas-comunes"],["empleado","Empleado","Empleados","empleados"],["admin-edificio","AdminEdificio","AdminEdificios","admin-edificios"],["usuario-rol-propiedad","UsuarioRolPropiedad","UsuariosRolesPropiedad","usuarios-roles-propiedad"]];
+// Reservas e incidencias tienen contrato propio (sin baja, autor de la sesión): se prueban en business-permissions.test.cjs.
 const unit = { nroUnidad: '2A', mtCuadrados: 65.25, descripcion: 'Unidad',
   edificioId: '1', tipoUnidadId: '2' };
 const fixtures = {
@@ -21,10 +23,9 @@ const fixtures = {
   Empleado: { usuarioId: '1', administracionId: '2', rolId: '3', beginAt: '2026-01-01' },
   AdminEdificio: { administracionId: '1', edificioId: '2', beginAt: '2026-01-01' },
   UsuarioRolPropiedad: { usuarioId: '1', rolId: '2', propiedadId: '3', endAt: null },
-  Incidencia: { descripcion: 'Reparar', usuarioId: '1', unidadId: '2' },
-  Reservacion: { fechaReservacion: '2099-10-01T12:00:00-03:00', descripcion: 'Reserva', usuarioId: '1', areaComunId: '2' }
 };
-let server, base, token, oldSecret, originalLookup;
+const context = { usuarioId: 1, now: new Date('2026-10-01T12:00:00Z'), grants: [] };
+let server, base, token, oldSecret, originalLookup, originalContext;
 const calls = [];
 const originals = [];
 before(async () => {
@@ -34,6 +35,9 @@ before(async () => {
   originalLookup = auth.getUserByIdForAuth;
   auth.getUserByIdForAuth = async () => ({ id: 1, nombre: 'Ana', apellido: 'Perez',
     email: 'ana@example.com', fechaNacimiento: new Date('2000-01-01'), estado: true, deletedAt: null });
+  // Los permisos reales se prueban en permissions-routes.test.cjs; acá solo importa el cableado de rutas.
+  originalContext = authorization.loadAuthorizationContext;
+  authorization.loadAuthorizationContext = async () => context;
   for (const [file, name, plural] of specs) {
     const service = require('../src/services/' + file + '.service');
     for (const method of ['getAll' + plural, 'get' + name + 'ById', 'create' + name, 'update' + name, 'delete' + name]) {
@@ -57,6 +61,7 @@ before(async () => {
 after(async () => {
   for (const [service, method, original] of originals) service[method] = original;
   auth.getUserByIdForAuth = originalLookup;
+  authorization.loadAuthorizationContext = originalContext;
   if (oldSecret === undefined) delete process.env.JWT_SECRET; else process.env.JWT_SECRET = oldSecret;
   if (server) await new Promise(resolve => server.close(resolve));
 });
@@ -85,9 +90,10 @@ for (const [file, name, plural, path] of specs) {
       assert.equal(data.operation, operation);
       const call = calls.at(-1);
       assert.equal(call.method, operation);
+      assert.ok(call.args.includes(context), 'el servicio recibe el contexto de autorización');
       if (url.endsWith('/1')) assert.equal(call.args[0], '1');
       if (body) {
-        const passed = ['Incidencia', 'Reservacion'].includes(name) && method === 'PUT' ? call.args[1] : call.args.at(-1);
+        const passed = method === 'PUT' ? call.args[1] : call.args[0];
         assert.equal(passed.intruso, undefined);
         for (const key of Object.keys(body)) {
           if (key.endsWith('Id')) assert.equal(typeof passed[key], 'number');
@@ -120,6 +126,33 @@ for (const [file, name, plural, path] of specs) {
     }
   });
 }
+test('los listados de asignaciones validan y convierten el filtro por usuario', async () => {
+  const globals = require('../src/services/usuario-rol.service');
+  const original = globals.getAllUsuariosRoles;
+  globals.getAllUsuariosRoles = async (...args) => { calls.push({ name: 'UsuarioRol', method: 'getAllUsuariosRoles', args }); return []; };
+  try {
+    for (const [path, method] of [['empleados', 'getAllEmpleados'], ['usuarios-roles-propiedad', 'getAllUsuariosRolesPropiedad'], ['usuarios-roles', 'getAllUsuariosRoles']]) {
+      assert.equal((await request('/' + path + '?usuarioId=7&otro=1')).status, 200, path);
+      const call = calls.at(-1);
+      assert.equal(call.method, method);
+      assert.deepEqual(call.args, [context, 7]);
+      assert.equal((await request('/' + path)).status, 200, path);
+      assert.deepEqual(calls.at(-1).args, [context, undefined]);
+      const count = calls.length;
+      for (const invalid of ['abc', '0', '1.5']) {
+        assert.equal((await request('/' + path + '?usuarioId=' + invalid)).status, 400, path + ' ' + invalid);
+      }
+      assert.equal(calls.length, count);
+    }
+  } finally { globals.getAllUsuariosRoles = original; }
+});
+test('reservas e incidencias requieren autenticacion en todos sus endpoints', async () => {
+  for (const path of ['reservaciones', 'incidencias']) {
+    for (const [method, url] of [['GET', ''], ['GET', '/1'], ['POST', ''], ['PUT', '/1']]) {
+      assert.equal((await request('/' + path + url, method, method === 'GET' ? undefined : {}, false)).status, 401, method + ' ' + path + url);
+    }
+  }
+});
 test('unidades admite area comun y rechaza campos del otro subtipo', async () => {
   assert.equal((await request('/unidades', 'POST', { ...fixtures.AreaComun, clase: 'area_comun' })).status, 201);
   const count = calls.length;

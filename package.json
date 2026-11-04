@@ -1,7 +1,7 @@
 {
-  "name": "api-express-demo",
+  "name": "vesta-api",
   "version": "1.0.0",
-  "description": "API Express Demo para enseñanza - UTN",
+  "description": "Vesta: API de administración de consorcios",
   "main": "dist/app.js",
   "scripts": {
     "build": "rm -rf dist && tsc",
@@ -17,8 +17,9 @@
     "express",
     "nodejs",
     "api",
-    "demo",
-    "utn"
+    "consorcios",
+    "utn",
+    "vesta"
   ],
   "author": "UTN - Desarrollo de Software",
   "license": "ISC",
@@ -26,20 +27,19 @@
   "dependencies": {
     "@mikro-orm/core": "^6.4.16",
     "@mikro-orm/mysql": "^6.4.16",
-    "@types/express": "^5.0.3",
-    "@types/node": "^24.0.7",
     "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "joi": "^18.0.1",
-    "reflect-metadata": "^0.2.2",
-    "typescript": "^5.5.4"
+    "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.0.7",
     "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
   }
 }

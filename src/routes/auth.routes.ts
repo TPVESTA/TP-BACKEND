@@ -15,14 +15,16 @@ router.post('/login', validate({ location: 'body', schema: loginUserSchema }), a
 
 // Solo login y registro son públicos dentro de este router.
 router.use(authMiddleware);
-router.use(authorizationMiddleware);
 
+// El perfil y la verificación solo necesitan la identidad del token (req.user).
 // GET /auth/profile - Obtener perfil del usuario autenticado
 router.get('/profile', authController.getProfile);
+// PUT /auth/profile - Editar los datos propios; no requiere un rol de negocio
 router.put('/profile', validate({ schema: updateProfileSchema, stripUnknown: false }), authController.updateProfile);
-router.get('/permisos', authController.getPermissions);
-
-// GET /auth/verify - Verificar si el token es válido (requiere autenticación)
+// GET /auth/verify - Verificar si el token es válido
 router.get('/verify', authController.verifyToken);
+
+// GET /auth/permisos - Permisos vigentes: es lo único de este router que carga el contexto de autorización
+router.get('/permisos', authorizationMiddleware, authController.getPermissions);
 
 export default router;

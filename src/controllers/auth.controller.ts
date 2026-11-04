@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ResponseHelper } from '../helpers/response.helper';
 import * as authService from '../services/auth.service';
-import { requireAuthorization } from '../services/authorization-request.helper';
+import { requireAuthorization } from '../middlewares/authorization-request.helper';
 import { updateOwnProfile } from '../services/user.service';
 import { handleControllerError } from '../helpers/controller.helper';
 
@@ -29,32 +29,18 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
   }
 };
 
-// Controlador para obtener perfil del usuario autenticado
-export const getProfile = async (req: Request, res: Response): Promise<void> => {
-  try {
-    if (!req.user) {
-      ResponseHelper.unauthorized(res, 'Usuario no autenticado');
-      return;
-    }
+// authMiddleware deja la identidad en req.user; la comprobación protege si una ruta se montara sin él.
 
-    ResponseHelper.success(res, req.user, 'Perfil obtenido exitosamente');
-  } catch (error) {
-    ResponseHelper.error(res, 'Error interno del servidor');
-  }
+// Controlador para obtener perfil del usuario autenticado
+export const getProfile = (req: Request, res: Response): void => {
+  if (!req.user) { ResponseHelper.unauthorized(res, 'Usuario no autenticado'); return; }
+  ResponseHelper.success(res, req.user, 'Perfil obtenido exitosamente');
 };
 
 // Controlador para verificar si el token es válido
-export const verifyToken = async (req: Request, res: Response): Promise<void> => {
-  try {
-    if (!req.user) {
-      ResponseHelper.unauthorized(res, 'Token inválido');
-      return;
-    }
-
-    ResponseHelper.success(res, { valid: true, user: req.user }, 'Token válido');
-  } catch (error) {
-    ResponseHelper.error(res, 'Error interno del servidor');
-  }
+export const verifyToken = (req: Request, res: Response): void => {
+  if (!req.user) { ResponseHelper.unauthorized(res, 'Token inválido'); return; }
+  ResponseHelper.success(res, { valid: true, user: req.user }, 'Token válido');
 };
 
 export const getPermissions = async (req: Request, res: Response): Promise<void> => {
@@ -66,7 +52,9 @@ export const getPermissions = async (req: Request, res: Response): Promise<void>
 
 export const updateProfile = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = await updateOwnProfile(req.body, requireAuthorization(req));
+    if (!req.user) { ResponseHelper.unauthorized(res, 'Usuario no autenticado'); return; }
+    // Solo edita la cuenta del token; los campos permitidos los controla el servicio.
+    const user = await updateOwnProfile(req.body, req.user.id);
     if (!user) { ResponseHelper.notFound(res, 'Usuario no encontrado'); return; }
     ResponseHelper.success(res, user, 'Perfil actualizado');
   } catch (error) { handleControllerError(res, error, 'updateProfile'); }

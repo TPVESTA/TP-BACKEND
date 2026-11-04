@@ -1,9 +1,9 @@
-import { AmbitoRol } from '../entities/AmbitoRol';
-import { AccionPermiso, SeccionPermiso } from '../entities/Permiso';
-import { AuthorizationError } from '../errors/authorization.error';
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { AmbitoRol } from '../../entities/AmbitoRol';
+import { AccionPermiso, SeccionPermiso } from '../../entities/Permiso';
+import { AuthorizationError } from '../../errors/authorization.error';
+import { DomainValidationError } from '../../errors/domain-validation.error';
 import { AuthorizationContext, matchingGrants } from './authorization.service';
-import { EntityId, parseId } from './service.helper';
+import { EntityId, parseId } from '../service.helper';
 
 export const requireBusinessAuthorization = (context: AuthorizationContext): AuthorizationContext => {
   if (!context || !Array.isArray(context.grants) || !context.usuarioId) {

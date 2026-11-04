@@ -6,13 +6,19 @@ Cada área común admite una sola reserva activa por día completo. El día se
 interpreta en Buenos Aires (UTC-03:00): distintas horas del mismo día compiten
 por el mismo espacio. Otra área u otro día son destinos independientes.
 
-Solo ocupa disponibilidad una reserva en estado `Reservado` con `deletedAt`
-nulo. Las reservas canceladas, finalizadas o dadas de baja no bloquean el día.
+Solo ocupa disponibilidad una reserva en estado `Reservado`. Las reservas
+canceladas o finalizadas no bloquean el día. Las reservas no se dan de baja: no
+existe `DELETE /api/reservaciones/:id`, y para liberar un día se cancelan.
 La cancelación libera la disponibilidad cuando se confirma la transacción.
 
 La regla se verifica al crear y al editar, incluso al cambiar fecha y área a la
 vez. Al editar se excluye la propia reserva. Una edición rechazada no guarda
 parcialmente la fecha, el espacio ni la descripción.
+
+Una reserva `Reservado` cuyo día ya terminó pasa a `Finalizado` cuando se la
+consulta: en el listado, el detalle, la disponibilidad o al intentar editarla.
+Todas las vencidas de una misma consulta se guardan en una sola escritura
+(un único `UPDATE`); si no hay vencidas, la consulta no escribe.
 
 ## Respuesta ante ocupación
 
@@ -86,7 +92,8 @@ alta compitiendo con un cambio de área, rollback y cancelación. Sin
 - Suite general: 129 aprobadas, 122 fallidas y una integración omitida.
   Una copia temporal de control sin la corrección de reservas reprodujo las
   mismas 122 pruebas fallidas; no se agregaron fallos a esa lista. Esas pruebas
-  antiguas requieren una actualización independiente.
+  antiguas se actualizaron el 03/11/2026: desde entonces `npm test` no tiene
+  fallos y solo omite esta integración si no se configura `RESERVAS_MYSQL_TEST=1`.
 
 La verificación se ejecutó con un servidor MySQL temporal en el puerto 33317,
 sin usar la base de la aplicación. El servidor temporal se apagó al terminar.

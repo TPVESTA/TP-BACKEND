@@ -1,7 +1,7 @@
 import { FilterQuery } from '@mikro-orm/core';
-import { AmbitoRol } from '../entities/AmbitoRol';
-import { AccionPermiso, SeccionPermiso } from '../entities/Permiso';
-import { AuthorizationError } from '../errors/authorization.error';
+import { AmbitoRol } from '../../entities/AmbitoRol';
+import { AccionPermiso, SeccionPermiso } from '../../entities/Permiso';
+import { AuthorizationError } from '../../errors/authorization.error';
 import {
   AuthorizationContext, authorizedScope, matchingGrants, requirePermission,
 } from './authorization.service';

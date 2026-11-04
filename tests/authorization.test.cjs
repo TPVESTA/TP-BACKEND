@@ -11,8 +11,8 @@ const { UsuarioRol } = require('../src/entities/UsuarioRol');
 const { UsuarioRolPropiedad } = require('../src/entities/UsuarioRolPropiedad');
 const { Empleado } = require('../src/entities/Empleado');
 const { AdminEdificio } = require('../src/entities/AdminEdificio');
-const { authorizedScope, hasPermission, matchingGrants, requirePermission, loadAuthorizationContext, isActiveAssignment } = require('../src/services/authorization.service');
-const { seedDefaultPermissions, getDefaultRolePermissions } = require('../src/services/permission-seed.service');
+const { authorizedScope, hasPermission, matchingGrants, requirePermission, loadAuthorizationContext, isActiveAssignment } = require('../src/services/authorization/authorization.service');
+const { seedDefaultPermissions, getDefaultRolePermissions } = require('../src/services/authorization/permission-seed.service');
 
 const permission = (seccion, flags = {}) => ({ seccion, crear: false, leer: false, editar: false, borrar: false, acciones: [], ...flags });
 const grant = (ambito, flags = {}) => ({ rolId: 1, rolCodigo: null, ambito, edificioIds: [], permisos: [], ...flags });
@@ -127,6 +127,17 @@ function loaderFixture() {
   return { em, rows, user, queries, propertyAssignment, job, management, building, administration, permissions };
 }
 
+test('con el usuario ya verificado en la petición, el contexto no vuelve a leerlo', async () => {
+  const state = loaderFixture();
+  const ctx = await loadAuthorizationContext(7, state.em, { userVerified: true });
+  assert.equal(state.queries.some(query => query.entity === User), false);
+  assert.equal(ctx.grants.length, 2, 'los permisos se cargan igual');
+  const unchecked = loaderFixture();
+  unchecked.user.estado = false;
+  assert.deepEqual((await loadAuthorizationContext(7, unchecked.em)).grants, [], 'sin la opción se sigue verificando el usuario');
+  assert.equal(unchecked.queries.filter(query => query.entity === User).length, 1);
+});
+
 test('el contexto carga permisos vigentes y no requiere un nombre literal de rol', async () => {
   const state = loaderFixture();
   const ctx = await loadAuthorizationContext(7, state.em);
@@ -196,7 +207,7 @@ test('SysAdmin global anterior recibe permisos completos y conserva la revocacio
     assert.equal(admin.rolCodigo, CodigoRol.SUPERADMIN);
     for (const section of Object.values(S)) for (const action of Object.values(A)) {
       assert.equal(hasPermission(context([admin]), section, action), true);
-      assert.equal(require('../src/services/authorization.service').permissionAllows(
+      assert.equal(require('../src/services/authorization/authorization.service').permissionAllows(
         admin.permisos.find(item => item.seccion === section), action), true);
     }
     assignment.endAt = new Date(Date.now() - 1);

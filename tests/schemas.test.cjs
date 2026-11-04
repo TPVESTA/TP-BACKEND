@@ -44,14 +44,6 @@ const specs = [
     ]
   },
   {
-    "file": "rol",
-    "name": "Rol",
-    "fields": [
-      "descripcion",
-      "ambito"
-    ]
-  },
-  {
     "file": "propiedad",
     "name": "Propiedad",
     "fields": [
@@ -103,7 +95,9 @@ const specs = [
     "name": "Incidencia",
     "fields": [
       "descripcion",
-      "usuarioId",
+      "unidadId"
+    ],
+    "immutable": [
       "unidadId"
     ]
   },
@@ -113,7 +107,6 @@ const specs = [
     "fields": [
       "fechaReservacion",
       "descripcion",
-      "usuarioId",
       "areaComunId"
     ]
   }
@@ -154,8 +147,8 @@ for (const spec of specs) {
     for (const body of [undefined, null, [], 'texto']) assert.ok(create.validate(body, options).error);
   });
   test(spec.name + ': actualizacion parcial sin valores por defecto ni campos desconocidos', () => {
-    for (const [key, value] of Object.entries(dataFor(spec))) {
-      if (spec.name === 'Reservacion' && key === 'usuarioId') continue;
+    const editable = Object.entries(dataFor(spec)).filter(([key]) => !(spec.immutable ?? []).includes(key));
+    for (const [key, value] of editable) {
       const result = update.validate({ [key]: value }, options);
       assert.ifError(result.error);
       assert.deepEqual(Object.keys(result.value), [key]);
@@ -163,7 +156,8 @@ for (const spec of specs) {
     for (const body of [undefined, null, [], {}, { id: 100, createdAt: samples.beginAt, inventado: true }]) {
       assert.ok(update.validate(body, options).error);
     }
-    const result = update.validate({ ...Object.fromEntries(Object.entries(dataFor(spec)).filter(([key]) => spec.name !== 'Reservacion' || key !== 'usuarioId')), id: 100, deletedAt: samples.beginAt }, options);
+    for (const key of spec.immutable ?? []) assert.ok(update.validate({ [key]: '1' }, options).error, key + ' no debe poder cambiarse');
+    const result = update.validate({ ...Object.fromEntries(editable), id: 100, deletedAt: samples.beginAt }, options);
     assert.ifError(result.error);
     assert.equal(result.value.id, undefined);
     assert.equal(result.value.deletedAt, undefined);
@@ -184,6 +178,14 @@ for (const spec of specs) {
     });
   }
 }
+test('reservas e incidencias toman autor y estado inicial de la sesion, no del body', () => {
+  for (const spec of specs.filter(s => ['Incidencia', 'Reservacion'].includes(s.name))) {
+    const create = require('../src/schemas/' + spec.file + '.schema')['create' + spec.name + 'Schema'];
+    for (const extra of [{ usuarioId: '1' }, { estado: 'Finalizado' }]) {
+      assert.ok(create.validate({ ...dataFor(spec), ...extra }, options).error, spec.name + ' ' + Object.keys(extra)[0]);
+    }
+  }
+});
 test('IDs solo aceptan enteros positivos seguros o digitos textuales', () => {
   for (const id of [0, -1, 1.2, true, null, '', '1x', '1e2', '1.0', ' 1 ', Number.MAX_SAFE_INTEGER + 1]) {
     assert.ok(common.idParamSchema.validate({ id }, options).error, String(id));
@@ -243,8 +245,6 @@ test('numeros no se redondean ni aceptan negativos o fracciones en cantidades en
   }
   assert.ifError(p.validate({ copropiedad: 0, habitaciones: 0, mtCuadrados: 0 }, options).error);
   assert.ifError(p.validate({ copropiedad: 100 }, options).error);
-  const rol = require('../src/schemas/rol.schema').createRolSchema;
-  assert.ok(rol.validate({ nombre: 'Rol', descripcion: 'Desc', ambito: 'OTRO' }, options).error);
 });
 test('validate entrega al controlador fechas convertidas y todos los campos del usuario', async () => {
   const req = { body: { cuil: samples.cuil, nombre: 'Ana', apellido: 'Perez', email: samples.email, telefono: '3415551234',

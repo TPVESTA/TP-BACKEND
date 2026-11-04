@@ -3,7 +3,7 @@ require('reflect-metadata');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { AuthorizationError } = require('../src/errors/authorization.error');
-const { getDefaultRolePermissions } = require('../src/services/permission-seed.service');
+const { getDefaultRolePermissions } = require('../src/services/authorization/permission-seed.service');
 const manager = require('../src/database/DatabaseManager').default.getInstance();
 const properties = require('../src/services/propiedad.service');
 const commonAreas = require('../src/services/area-comun.service');

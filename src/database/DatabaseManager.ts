@@ -1,7 +1,7 @@
 import { MikroORM } from '@mikro-orm/core';
 import { MySqlDriver } from '@mikro-orm/mysql';
 import config from '../config/mikro-orm.config';
-import { seedDefaultPermissions } from '../services/permission-seed.service';
+import { seedDefaultPermissions } from '../services/authorization/permission-seed.service';
 
 class DatabaseManager {
   private static instance: DatabaseManager;

@@ -9,6 +9,8 @@ export const idSchema = Joi.alternatives().try(
 ).messages({ 'alternatives.match': 'El ID debe ser un entero positivo seguro' });
 
 export const idParamSchema = Joi.object({ id: idSchema.required() }).required();
+// Filtro opcional de los listados de asignaciones: sin usuarioId se listan todas las del ámbito.
+export const usuarioFilterQuerySchema = Joi.object({ usuarioId: idSchema });
 export const nombreSchema = Joi.string().trim().min(2).max(100);
 // Nombres de persona: letras (con tildes y ñ), separadas por espacio, apóstrofo o guion.
 export const nombrePersonaSchema = Joi.string().trim().min(2).max(100).pattern(/^[\p{L}]+(?:[ '\-][\p{L}]+)*$/u).messages({

@@ -27,7 +27,8 @@ export class User {
   @Property()
   fechaNacimiento!: Date;
 
-  @Property({ hidden: true }) // Revisar
+  // Nunca se serializa en las respuestas.
+  @Property({ hidden: true })
   password!: string;
 
   @Property({ fieldName: 'created_at' })
@@ -59,6 +60,6 @@ export class User {
     this.password = password;
     this.createdAt = new Date();
     this.updatedAt = new Date();
-    this.estado = estado; // Revisar si se debe inicializar o siempre se envia el estado como paramatro
+    this.estado = estado;
   }
 }

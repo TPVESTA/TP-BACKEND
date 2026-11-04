@@ -21,6 +21,9 @@ import usuarioRolRoutes from './usuario-rol.routes';
 
 const router: express.Router = express.Router();
 
+// Las respuestas de la API dependen del usuario y contienen datos personales: no se guardan en caché.
+router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store, private'); next(); });
+
 // Configurar todas las rutas de la aplicación
 router.use('/auth', authRoutes);
 // Montar todas las rutas de negocio después de esta protección.

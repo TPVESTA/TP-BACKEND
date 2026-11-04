@@ -1,6 +1,6 @@
-import { AuthorizationContext } from './authorization.service';
+import { AuthorizationContext } from './authorization/authorization.service';
 import { AccionPermiso } from '../entities/Permiso';
-import { propertyWhere, requireBuildingMutation } from './structure-authorization.helper';
+import { propertyWhere, requireBuildingMutation } from './authorization/structure-authorization.helper';
 import { AmbitoUnidad } from '../entities/AmbitoUnidad';
 import { requireAmbitoUnidad } from './ambito-unidad.helper';
 import { Propiedad } from '../entities/Propiedad';

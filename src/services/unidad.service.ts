@@ -5,10 +5,10 @@ import { AreaComun } from '../entities/AreaComun';
 import * as propiedadService from './propiedad.service';
 import * as areaComunService from './area-comun.service';
 import { EntityId, getEntityManager, parseId } from './service.helper';
-import { AuthorizationContext, hasPermission } from './authorization.service';
+import { AuthorizationContext, hasPermission } from './authorization/authorization.service';
 import { AccionPermiso, SeccionPermiso } from '../entities/Permiso';
 import { AuthorizationError } from '../errors/authorization.error';
-import { commonAreaWhere, propertyWhere } from './structure-authorization.helper';
+import { commonAreaWhere, propertyWhere } from './authorization/structure-authorization.helper';
 
 // Unidad es abstracta: las altas siempre corresponden a un subtipo concreto.
 export type CreateUnidadData =

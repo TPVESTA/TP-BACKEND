@@ -4,13 +4,13 @@ import { Rol } from '../entities/Rol';
 import { Administracion } from '../entities/Administracion';
 import { AmbitoRol } from '../entities/AmbitoRol';
 import { SeccionPermiso as S, AccionPermiso as A } from '../entities/Permiso';
-import { AuthorizationContext, requirePermission } from './authorization.service';
-import { assignmentScope, requireDelegableRole, revokeAssignment } from './assignment-authorization.helper';
+import { AuthorizationContext, requirePermission } from './authorization/authorization.service';
+import { assignmentScope, requireDelegableRole, revokeAssignment } from './authorization/assignment-authorization.helper';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';
 import { DomainValidationError } from '../errors/domain-validation.error';
 import { AuthorizationError } from '../errors/authorization.error';
 import { getUserById } from './user.service';
-import { authorizedScope } from './authorization.service';
+import { authorizedScope } from './authorization/authorization.service';
 import { findOrCreateOpenUsuarioRol } from './usuario-rol-link.helper';
 
 export interface CreateEmpleadoData {
@@ -23,8 +23,9 @@ const filter = (ctx: AuthorizationContext) => { const scope = assignmentScope(ct
 const target = (entity: Empleado) => ({ administracionId: entity.administracion.id });
 const populate = ["usuarioRol.usuario", "usuarioRol.rol.permisos", "administracion"] as const;
 
-export const getAllEmpleados = async (ctx: AuthorizationContext): Promise<Empleado[]> => {
-  return getEntityManager().find(Empleado, filter(ctx), { populate: [...populate], filters: { softDelete: false } });
+export const getAllEmpleados = async (ctx: AuthorizationContext, usuarioId?: EntityId): Promise<Empleado[]> => {
+  const where = usuarioId === undefined ? filter(ctx) : { ...filter(ctx), usuarioRol: { usuario: parseId(usuarioId) } };
+  return getEntityManager().find(Empleado, where, { populate: [...populate], filters: { softDelete: false } });
 };
 export const getEmpleadoById = async (id: EntityId, ctx: AuthorizationContext): Promise<Empleado | null> => {
   return getEntityManager().findOne(Empleado, { $and: [filter(ctx), { id: parseId(id) }] }, { populate: [...populate], filters: { softDelete: false } });

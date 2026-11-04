@@ -1,6 +1,6 @@
-import { AuthorizationContext } from './authorization.service';
+import { AuthorizationContext } from './authorization/authorization.service';
 import { AccionPermiso } from '../entities/Permiso';
-import { administrationWhere, requireGlobalStructure } from './structure-authorization.helper';
+import { administrationWhere, requireGlobalStructure } from './authorization/structure-authorization.helper';
 import { Administracion } from '../entities/Administracion';
 import { Localidad } from '../entities/Localidad';
 import { EntityId, getEntityManager, parseId, requireEntity } from './service.helper';

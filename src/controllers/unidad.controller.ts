@@ -1,4 +1,4 @@
-import { requireAuthorization } from '../services/authorization-request.helper';
+import { requireAuthorization } from '../middlewares/authorization-request.helper';
 import { Request, Response } from 'express';
 import * as service from '../services/unidad.service';
 import { ResponseHelper } from '../helpers/response.helper';

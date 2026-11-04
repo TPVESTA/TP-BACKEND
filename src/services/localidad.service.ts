@@ -1,6 +1,6 @@
-import { AuthorizationContext } from './authorization.service';
+import { AuthorizationContext } from './authorization/authorization.service';
 import { AccionPermiso } from '../entities/Permiso';
-import { requireCatalogPermission } from './structure-authorization.helper';
+import { requireCatalogPermission } from './authorization/structure-authorization.helper';
 import { Localidad } from '../entities/Localidad';
 import { EntityId, getEntityManager, parseId } from './service.helper';
 

@@ -1,19 +1,16 @@
 {
   "welcomeMessage": {
-    "message": "API Express Demo - UTN",
+    "message": "Vesta - API de administración de consorcios",
     "endpoints": {
       "register": "POST /api/auth/register",
       "login": "POST /api/auth/login",
       "profile": "GET /api/auth/profile (requiere token)",
-      "verifyToken": "GET /api/auth/verify (requiere token)",
-      "users": "GET /api/users (requiere token)",
-      "user": "GET /api/users/:id (requiere token)",
-      "createUser": "POST /api/users (requiere token)",
-      "updateUser": "PUT /api/users/:id (requiere token)",
-      "deleteUser": "DELETE /api/users/:id (requiere token)"
+      "updateProfile": "PUT /api/auth/profile (requiere token)",
+      "permissions": "GET /api/auth/permisos (requiere token)",
+      "verifyToken": "GET /api/auth/verify (requiere token)"
     },
     "crud": {
-      "authentication": "Authorization: Bearer <token>",
+      "authentication": "Authorization: Bearer <token>; cada operación exige además el permiso del ámbito",
       "operations": ["GET /", "GET /:id", "POST /", "PUT /:id", "DELETE /:id"],
       "resources": [
         "/api/users",
@@ -24,13 +21,14 @@
         "/api/unidades",
         "/api/propiedades",
         "/api/areas-comunes",
-        "/api/roles",
         "/api/empleados",
         "/api/admin-edificios",
         "/api/usuarios-roles-propiedad",
-        "/api/incidencias",
-        "/api/reservaciones"
-      ]
+        "/api/usuarios-roles"
+      ],
+      "readOnly": ["/api/roles"],
+      "withoutDelete": ["/api/incidencias", "/api/reservaciones"],
+      "other": ["GET /api/reservaciones/disponibilidad?areaComunId=<id>"]
     }
   }
 }

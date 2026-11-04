@@ -1,14 +1,14 @@
 import { EntityManager } from '@mikro-orm/core';
-import { AdminEdificio } from '../entities/AdminEdificio';
-import { AmbitoRol } from '../entities/AmbitoRol';
-import { Empleado } from '../entities/Empleado';
-import { AccionPermiso, CodigoRol, SeccionPermiso } from '../entities/Permiso';
-import { RolPermiso } from '../entities/RolPermiso';
-import { User } from '../entities/User';
-import { UsuarioRol } from '../entities/UsuarioRol';
-import { UsuarioRolPropiedad } from '../entities/UsuarioRolPropiedad';
-import { AuthorizationError } from '../errors/authorization.error';
-import { EntityId, getEntityManager, parseId } from './service.helper';
+import { AdminEdificio } from '../../entities/AdminEdificio';
+import { AmbitoRol } from '../../entities/AmbitoRol';
+import { Empleado } from '../../entities/Empleado';
+import { AccionPermiso, CodigoRol, SeccionPermiso } from '../../entities/Permiso';
+import { RolPermiso } from '../../entities/RolPermiso';
+import { User } from '../../entities/User';
+import { UsuarioRol } from '../../entities/UsuarioRol';
+import { UsuarioRolPropiedad } from '../../entities/UsuarioRolPropiedad';
+import { AuthorizationError } from '../../errors/authorization.error';
+import { EntityId, getEntityManager, parseId } from '../service.helper';
 import { getDefaultRolePermissions } from './permission-seed.service';
 import { isSystemAdminRole } from './system-admin.helper';
 
@@ -134,12 +134,17 @@ export const authorizedScope = (
 
 export const loadAuthorizationContext = async (
   usuarioId: EntityId, em: EntityManager = getEntityManager(),
+  { userVerified = false }: { userVerified?: boolean } = {},
 ): Promise<AuthorizationContext> => {
   const id = parseId(usuarioId);
   const now = new Date();
   const context: AuthorizationContext = { usuarioId: id, now, grants: [] };
-  const user = await em.findOne(User, { id });
-  if (!user || user.estado !== true || user.deletedAt) return context;
+  // userVerified: quien llama ya leyó al usuario en esta petición y comprobó que
+  // existe, está activo y no tiene baja (authMiddleware); no se vuelve a consultar.
+  if (!userVerified) {
+    const user = await em.findOne(User, { id });
+    if (!user || user.estado !== true || user.deletedAt) return context;
+  }
   const vigencia = { beginAt: { $lte: now }, $or: [{ endAt: null }, { endAt: { $gt: now } }] };
   const [globales, propiedades, empleos] = await Promise.all([
     em.find(UsuarioRol, { usuario: id, rol: { ambito: AmbitoRol.GLOBAL }, ...vigencia }, { populate: ['rol'] }),

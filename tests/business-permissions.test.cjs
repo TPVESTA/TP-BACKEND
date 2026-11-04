@@ -54,17 +54,25 @@ const matches = (record, where) => Object.entries(where).every(([key, expected])
 });
 async function withEM(records, run) {
   const original = manager.getORM;
-  const queries = [], persisted = [];
+  const queries = [], persisted = [], transactions = [];
+  let inTransaction = false;
   const em = {
-    transactional: async callback => callback(em),
+    transactional: async (callback, options) => {
+      transactions.push(options);
+      inTransaction = true;
+      try { return await callback(em); } finally { inTransaction = false; }
+    },
     find: async (entity, where) => { queries.push({ entity, where }); return (records.get(entity) ?? []).filter(item => matches(item, where)); },
-    findOne: async (entity, where) => { queries.push({ entity, where }); return (records.get(entity) ?? []).find(item => matches(item, where)) ?? null; },
+    findOne: async (entity, where, options) => {
+      queries.push({ entity, where, options, inTransaction });
+      return (records.get(entity) ?? []).find(item => matches(item, where)) ?? null;
+    },
     persistAndFlush: async item => { persisted.push(item); },
     removeAndFlush: async () => { throw new Error('No debe usarse borrado físico'); },
     getReference: (entity, id) => ({ id }),
   };
   manager.getORM = () => ({ em: { fork: () => em } });
-  try { await run({ queries, persisted }); } finally { manager.getORM = original; }
+  try { await run({ queries, persisted, transactions }); } finally { manager.getORM = original; }
 }
 
 test('schemas toman autor de la sesión y preservan contexto en las actualizaciones', () => {
@@ -217,6 +225,28 @@ test('reservas e incidencias no tienen baja: no existe el servicio ni la ruta DE
   }
 });
 
+test('editar una incidencia bloquea solo su fila dentro de una transacción y luego la relee', async () => {
+  const { IsolationLevel, LockMode } = require('@mikro-orm/core');
+  const item = incidence();
+  await withEM(new Map([[Incidencia, [item]]]), async ({ queries, transactions, persisted }) => {
+    await incidences.updateIncidencia(600, { estado: EstadoIncidencia.EN_REVISION }, administrative());
+    assert.deepEqual(transactions, [{ isolationLevel: IsolationLevel.READ_COMMITTED }]);
+    const [lock, read] = queries.filter(query => query.entity === Incidencia);
+    // Primero el bloqueo: solo por ID, sin relaciones ni condiciones de ámbito que agreguen joins.
+    assert.equal(lock.inTransaction, true);
+    assert.deepEqual(lock.where, { id: 600 });
+    assert.equal(lock.options.lockMode, LockMode.PESSIMISTIC_WRITE);
+    assert.equal(lock.options.populate, undefined);
+    assert.equal(lock.options.filters, false, 'sin el join del filtro de baja lógica del autor');
+    // Después, con el bloqueo tomado, la lectura con ámbito y relaciones desde la base.
+    assert.equal(read.inTransaction, true);
+    assert.ok(read.where.$and, 'aplica el ámbito del usuario');
+    assert.equal(read.options.lockMode, undefined);
+    assert.equal(read.options.refresh, true);
+    assert.equal(persisted.length, 1);
+  });
+});
+
 test('una incidencia abierta puede cancelarse; Finalizado y Cancelado son finales', async () => {
   const reported = incidence(), reviewing = incidence({ id: 601, estado: EstadoIncidencia.EN_REVISION });
   const closed = incidence({ id: 602, estado: EstadoIncidencia.FINALIZADO });
@@ -287,4 +317,33 @@ test('propiedad de origen impide mover reserva a otro edificio incluso con gesti
     assert.equal(item.propiedadOrigen.id, 100);
     assert.equal(persisted.length, 1);
   });
+});
+
+test('las reservas vencidas se finalizan al consultarlas en una sola escritura', async () => {
+  const yesterday = new Date('2026-10-04T15:00:00Z');
+  const expired = () => [reservation({ id: 501, fechaReservacion: yesterday }), reservation({ id: 502, fechaReservacion: yesterday })];
+  const listar = async (items, run) => withEM(new Map([[Reservacion, items], [AreaComun, [area()]]]), run);
+  for (const [name, consultar] of [
+    ['listado', () => reservations.getAllReservaciones(administrative())],
+    ['disponibilidad', () => reservations.getDisponibilidadReservaciones(200, resident())],
+  ]) {
+    const [first, second] = expired();
+    const upcoming = reservation({ id: 503 });
+    const cancelled = reservation({ id: 504, fechaReservacion: yesterday, estado: EstadoReservacion.CANCELADO });
+    await listar([first, second, upcoming, cancelled], async ({ persisted }) => {
+      await consultar();
+      assert.equal(persisted.length, 1, name + ': una sola escritura');
+      assert.deepEqual(persisted[0], [first, second]);
+      for (const item of [first, second]) {
+        assert.equal(item.estado, EstadoReservacion.FINALIZADO);
+        assert.equal(item.updatedAt, now);
+      }
+      assert.equal(upcoming.estado, EstadoReservacion.RESERVADO);
+      assert.equal(cancelled.estado, EstadoReservacion.CANCELADO);
+    });
+    await listar([reservation({ id: 505 })], async ({ persisted }) => {
+      await consultar();
+      assert.equal(persisted.length, 0, name + ': sin vencidas no escribe');
+    });
+  }
 });

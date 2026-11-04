@@ -6,7 +6,7 @@ const express = require('express');
 const routes = require('../src/routes').default;
 const { errorMiddleware, notFoundMiddleware } = require('../src/middlewares/error.middleware');
 const { generateToken } = require('../src/services/auth.service');
-const { getDefaultRolePermissions } = require('../src/services/permission-seed.service');
+const { getDefaultRolePermissions } = require('../src/services/authorization/permission-seed.service');
 const manager = require('../src/database/DatabaseManager').default.getInstance();
 
 function matches(row, where) {

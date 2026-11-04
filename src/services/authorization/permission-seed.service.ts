@@ -1,11 +1,11 @@
 import { EntityManager } from '@mikro-orm/core';
-import { AmbitoRol } from '../entities/AmbitoRol';
-import { AccionPermiso as A, CodigoRol, SeccionPermiso as S } from '../entities/Permiso';
-import { Rol } from '../entities/Rol';
-import { RolPermiso } from '../entities/RolPermiso';
-import { User } from '../entities/User';
-import { UsuarioRol } from '../entities/UsuarioRol';
-import { DomainValidationError } from '../errors/domain-validation.error';
+import { AmbitoRol } from '../../entities/AmbitoRol';
+import { AccionPermiso as A, CodigoRol, SeccionPermiso as S } from '../../entities/Permiso';
+import { Rol } from '../../entities/Rol';
+import { RolPermiso } from '../../entities/RolPermiso';
+import { User } from '../../entities/User';
+import { UsuarioRol } from '../../entities/UsuarioRol';
+import { DomainValidationError } from '../../errors/domain-validation.error';
 import type { PermissionDescriptor } from './authorization.service';
 
 const permission = (seccion: S, actions: A[]): PermissionDescriptor => ({
