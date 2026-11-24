@@ -47,6 +47,10 @@ const lockAreaComun = async (em: EntityManager, id: EntityId): Promise<AreaComun
   return area;
 };
 
+const requireReservable = (area: AreaComun): void => {
+  if (area.esReservable === false) throw new DomainValidationError('El área común no admite reservas.');
+};
+
 const requireAvailableDay = async (
   em: EntityManager, areaComunId: number, fecha: Date, excludeId?: number,
 ): Promise<void> => {
@@ -151,6 +155,7 @@ export const createReservacion = async (data: CreateReservacionData, context: Au
     if (!hasPermission(context, SeccionPermiso.RESERVAS, AccionPermiso.CREAR, { edificioId: area.edificio.id })) {
       throw new AuthorizationError('No tiene permiso para reservar en este edificio.');
     }
+    requireReservable(area);
     if (diaReservacion(data.fechaReservacion) < diaReservacion(context.now)) {
       throw new DomainValidationError('No se puede reservar un día que ya terminó.');
     }
@@ -204,7 +209,11 @@ export const updateReservacion = async (id: EntityId, data: UpdateReservacionDat
     }
     if (data.estado !== EstadoReservacion.CANCELADO) {
       const targetArea = await lockAreaComun(em, area?.id ?? entity.areaComun.id);
-      await requireAvailableDay(em, targetArea.id, data.fechaReservacion ?? entity.fechaReservacion, entity.id);
+      const targetDate = data.fechaReservacion ?? entity.fechaReservacion;
+      if (targetArea.id !== entity.areaComun.id || diaReservacion(targetDate) !== diaReservacion(entity.fechaReservacion)) {
+        requireReservable(targetArea);
+      }
+      await requireAvailableDay(em, targetArea.id, targetDate, entity.id);
     }
     if (data.fechaReservacion !== undefined) entity.fechaReservacion = data.fechaReservacion;
     if (data.estado !== undefined) entity.estado = data.estado;

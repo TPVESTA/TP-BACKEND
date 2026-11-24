@@ -6,7 +6,8 @@ import { createAreaComunSchema, updateAreaComunSchema } from './area-comun.schem
 export const createUnidadSchema = Joi.alternatives().try(
   createPropiedadSchema.keys({
     clase: Joi.string().valid('propiedad').required(),
-    capacidad: Joi.forbidden()
+    capacidad: Joi.forbidden(),
+    esReservable: Joi.forbidden()
   }),
   createAreaComunSchema.keys({
     clase: Joi.string().valid('area_comun').required(),
@@ -18,7 +19,8 @@ export const createUnidadSchema = Joi.alternatives().try(
 export const updateUnidadSchema = Joi.alternatives().try(
   updatePropiedadSchema.keys({
     clase: Joi.string().valid('propiedad').required(),
-    capacidad: Joi.forbidden()
+    capacidad: Joi.forbidden(),
+    esReservable: Joi.forbidden()
   }).min(2),
   updateAreaComunSchema.keys({
     clase: Joi.string().valid('area_comun').required(),

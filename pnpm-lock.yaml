@@ -14,12 +14,6 @@ importers:
       '@mikro-orm/mysql':
         specifier: ^6.4.16
         version: 6.6.16(@mikro-orm/core@6.6.16)(@types/node@24.13.3)
-      '@types/express':
-        specifier: ^5.0.3
-        version: 5.0.6
-      '@types/node':
-        specifier: ^24.0.7
-        version: 24.13.3
       bcryptjs:
         specifier: ^3.0.2
         version: 3.0.3
@@ -38,22 +32,25 @@ importers:
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
-      typescript:
-        specifier: ^5.5.4
-        version: 5.9.3
     devDependencies:
-      '@types/bcryptjs':
-        specifier: ^2.4.6
-        version: 2.4.6
+      '@types/express':
+        specifier: ^5.0.3
+        version: 5.0.6
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
+      '@types/node':
+        specifier: ^24.0.7
+        version: 24.13.3
       nodemon:
         specifier: ^3.1.10
         version: 3.1.14
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@24.13.3)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.5.4
+        version: 5.9.3
 
 packages:
 
@@ -143,9 +140,6 @@ packages:
 
   '@tsconfig/node16@1.0.4':
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
-
-  '@types/bcryptjs@2.4.6':
-    resolution: {integrity: sha512-9xlo6R2qDs5uixm0bcIqCeMCE6HiQsIyel9KQySStiyqNl2tnj2mP3DX1Nf56MD6KMenNNlBBsy3LJ7gUEQPXQ==}
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -976,8 +970,6 @@ snapshots:
   '@tsconfig/node14@1.0.3': {}
 
   '@tsconfig/node16@1.0.4': {}
-
-  '@types/bcryptjs@2.4.6': {}
 
   '@types/body-parser@1.19.6':
     dependencies:

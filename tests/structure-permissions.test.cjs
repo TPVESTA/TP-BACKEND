@@ -1,8 +1,11 @@
 require('ts-node/register');
 require('reflect-metadata');
-const { test } = require('node:test');
+const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const { MikroORM } = require('@mikro-orm/core');
+const config = require('../src/config/mikro-orm.config').default;
 const { AuthorizationError } = require('../src/errors/authorization.error');
+const { DomainValidationError } = require('../src/errors/domain-validation.error');
 const { getDefaultRolePermissions } = require('../src/services/authorization/permission-seed.service');
 const manager = require('../src/database/DatabaseManager').default.getInstance();
 const properties = require('../src/services/propiedad.service');
@@ -13,8 +16,19 @@ const managements = require('../src/services/admin-edificio.service');
 const units = require('../src/services/unidad.service');
 const localities = require('../src/services/localidad.service');
 const unitTypes = require('../src/services/tipo-unidad.service');
+const reunions = require('../src/services/reunion.service');
 const { Propiedad } = require('../src/entities/Propiedad');
 const { AreaComun } = require('../src/entities/AreaComun');
+const { Notificacion } = require('../src/entities/Notificacion');
+const { Rol } = require('../src/entities/Rol');
+
+let orm;
+before(async () => {
+  orm = await MikroORM.init({ ...config, connect: false });
+});
+after(async () => {
+  if (orm) await orm.close();
+});
 
 function context(code, changes = {}) {
   const ambito = code === 'SUPERADMIN' ? 'GLOBAL'
@@ -67,6 +81,7 @@ async function withDatabase(run) {
     ],
     Localidad: [{ id: 1, nombre: 'Santa Fe', provincia: 'Santa Fe' }],
     TipoUnidad: [{ id: 1, nombre: 'Departamento', ambito: 'PRIVADO' }, { id: 2, nombre: 'SUM', ambito: 'COMUN' }],
+    Rol: [Object.assign(new Rol(), { id: 4, codigo: 'PROPIETARIO', ambito: 'PROPIEDAD' })],
   };
   const calls = [];
   const writes = [];
@@ -80,6 +95,11 @@ async function withDatabase(run) {
       const name = typeof entity === 'string' ? entity : entity.name;
       calls.push({ name, where });
       return records[name].find(row => matches(row, where)) ?? null;
+    },
+    findOneOrFail: async (entity, where) => {
+      const row = await em.findOne(entity, where);
+      assert.ok(row);
+      return row;
     },
     persistAndFlush: async entity => writes.push(entity),
     removeAndFlush: async entity => writes.push(entity),
@@ -130,6 +150,48 @@ test('mantenimiento lee el contexto de trabajo sin obtener propiedades por /unid
     await assert.rejects(properties.getPropiedadById(100, ctx), AuthorizationError);
     assert.deepEqual((await units.getAllUnidades(ctx)).map(row => row.id), [200]);
     assert.equal(await units.getUnidadById(100, ctx), null);
+  });
+});
+
+test('solo un administrativo del edificio o un superadministrador puede crear reuniones con aviso para propietarios', async () => {
+  await withDatabase(async ({ calls, writes }) => {
+    const data = { asunto: 'Asamblea', minuta: 'Presupuesto', fecha: '2026-12-10', hora: '19:30:00', edificioId: 10 };
+    const structureWrite = { seccion: 'ESTRUCTURA', crear: true };
+    for (const code of ['RESIDENTE', 'PROPIETARIO', 'MANTENIMIENTO']) {
+      await assert.rejects(reunions.createReunion(data, context(code, { permisos: [structureWrite] })), AuthorizationError);
+    }
+
+    const otherBuildingAdmin = context('ADMINISTRATIVO', { edificioIds: [20] });
+    otherBuildingAdmin.grants.push(...context('MANTENIMIENTO', { permisos: [structureWrite] }).grants);
+    await assert.rejects(reunions.createReunion(data, otherBuildingAdmin), AuthorizationError);
+    assert.equal(calls.length, 0);
+    assert.equal(writes.length, 0);
+
+    const administrative = await reunions.createReunion(data, context('ADMINISTRATIVO'));
+    const systemAdmin = await reunions.createReunion({ ...data, edificioId: 20 }, context('SUPERADMIN'));
+    assert.equal(administrative.edificio.id, 10);
+    assert.equal(systemAdmin.edificio.id, 20);
+    assert.equal(writes.length, 2);
+    for (const [index, reunion] of [administrative, systemAdmin].entries()) {
+      const [savedReunion, notificacion] = writes[index];
+      assert.equal(savedReunion, reunion);
+      assert.ok(notificacion instanceof Notificacion);
+      assert.equal(notificacion.edificio, reunion.edificio);
+      assert.deepEqual(notificacion.roles.getItems().map(role => role.codigo), ['PROPIETARIO']);
+      assert.equal(notificacion.titulo, reunion.asunto);
+      assert.match(notificacion.descripcion, /10\/12\/2026 a las 19:30/);
+      assert.equal(notificacion.prioridad, 'media');
+      assert.equal(notificacion.muestraDesde.toISOString(), '2026-10-05T12:00:00.000Z');
+      assert.equal(notificacion.muestraHasta.toISOString(), '2026-12-10T22:30:00.000Z');
+    }
+  });
+});
+
+test('una reunión que ya comenzó no se guarda porque el aviso no tendría vigencia', async () => {
+  await withDatabase(async ({ writes }) => {
+    const data = { asunto: 'Asamblea', minuta: 'Presupuesto', fecha: '2026-10-05', hora: '09:00:00', edificioId: 10 };
+    await assert.rejects(reunions.createReunion(data, context('ADMINISTRATIVO')), DomainValidationError);
+    assert.equal(writes.length, 0);
   });
 });
 

@@ -230,12 +230,23 @@ test('unidades: seleccion de subtipo y al menos un cambio ademas de clase', () =
     assert.ok(unidad.updateUnidadSchema.validate({ clase }, options).error);
     assert.ok(unidad.updateUnidadSchema.validate({ clase, inventado: true }, options).error);
     assert.ok(unidad.createUnidadSchema.validate({ ...data, clase: 'otra' }, options).error);
-    const wrong = clase === 'propiedad' ? { capacidad: 3 } : { habitaciones: 3 };
-    assert.ok(unidad.createUnidadSchema.validate({ ...data, ...wrong }, options).error);
-    assert.ok(unidad.updateUnidadSchema.validate({ clase, ...wrong }, options).error);
+    const invalidFields = clase === 'propiedad' ? [{ capacidad: 3 }, { esReservable: false }] : [{ habitaciones: 3 }];
+    for (const wrong of invalidFields) {
+      assert.ok(unidad.createUnidadSchema.validate({ ...data, ...wrong }, options).error);
+      assert.ok(unidad.updateUnidadSchema.validate({ clase, ...wrong }, options).error);
+    }
   }
   assert.ok(unidad.createUnidadSchema.validate(undefined, options).error);
   assert.ok(unidad.updateUnidadSchema.validate({ descripcion: 'Nueva' }, options).error);
+});
+test('areas comunes aceptan booleanos y null en esReservable', () => {
+  const { updateAreaComunSchema } = require('../src/schemas/area-comun.schema');
+  for (const esReservable of [true, false, null]) {
+    const result = updateAreaComunSchema.validate({ esReservable }, options);
+    assert.ifError(result.error);
+    assert.equal(result.value.esReservable, esReservable);
+  }
+  assert.ok(updateAreaComunSchema.validate({ esReservable: 'false' }, options).error);
 });
 test('numeros no se redondean ni aceptan negativos o fracciones en cantidades enteras', () => {
   const p = require('../src/schemas/propiedad.schema').updatePropiedadSchema;

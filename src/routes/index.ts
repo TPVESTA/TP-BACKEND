@@ -14,6 +14,8 @@ import adminEdificioRoutes from './admin-edificio.routes';
 import usuarioRolPropiedadRoutes from './usuario-rol-propiedad.routes';
 import incidenciaRoutes from './incidencia.routes';
 import reservacionRoutes from './reservacion.routes';
+import reunionRoutes from './reunion.routes';
+import notificacionRoutes from './notificacion.routes';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { authorizationMiddleware } from '../middlewares/authorization.middleware';
 
@@ -44,5 +46,7 @@ router.use('/admin-edificios', adminEdificioRoutes);
 router.use('/usuarios-roles-propiedad', usuarioRolPropiedadRoutes);
 router.use('/incidencias', incidenciaRoutes);
 router.use('/reservaciones', reservacionRoutes);
+router.use('/reuniones', reunionRoutes);
+router.use('/notificaciones', notificacionRoutes);
 
 export default router;

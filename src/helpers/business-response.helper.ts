@@ -25,7 +25,7 @@ const unit = (entity: Unidad) => ({
     nombre: entity.tipoUnidad.nombre,
     ambito: entity.tipoUnidad.ambito,
   } : undefined,
-  ...(entity instanceof AreaComun ? { capacidad: entity.capacidad } : {}),
+  ...(entity instanceof AreaComun ? { capacidad: entity.capacidad, esReservable: entity.esReservable } : {}),
   ...(entity instanceof Propiedad ? { copropiedad: entity.copropiedad, habitaciones: entity.habitaciones } : {}),
 });
 

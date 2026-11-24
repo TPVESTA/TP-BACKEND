@@ -13,6 +13,7 @@ export interface CreateAreaComunData {
   mtCuadrados: number;
   descripcion: string;
   capacidad?: number | null;
+  esReservable?: boolean | null;
   edificioId: EntityId;
   tipoUnidadId: EntityId;
 }
@@ -39,6 +40,7 @@ export const createAreaComun = async (data: CreateAreaComunData, context: Author
   entity.mtCuadrados = data.mtCuadrados;
   entity.descripcion = data.descripcion;
   entity.capacidad = data.capacidad === 0 ? null : data.capacidad ?? null;
+  entity.esReservable = data.esReservable ?? null;
   entity.edificio = await requireEntity(em, Edificio, data.edificioId, 'Edificio');
   entity.tipoUnidad = await requireEntity(em, TipoUnidad, data.tipoUnidadId, 'TipoUnidad');
   requireAmbitoUnidad(entity.tipoUnidad, AmbitoUnidad.COMUN);
@@ -56,6 +58,7 @@ export const updateAreaComun = async (id: EntityId, data: UpdateAreaComunData, c
   if (data.mtCuadrados !== undefined) entity.mtCuadrados = data.mtCuadrados;
   if (data.descripcion !== undefined) entity.descripcion = data.descripcion;
   if (data.capacidad !== undefined) entity.capacidad = data.capacidad === 0 ? null : data.capacidad;
+  if (data.esReservable !== undefined) entity.esReservable = data.esReservable;
   if (data.edificioId !== undefined) entity.edificio = await requireEntity(em, Edificio, data.edificioId, 'Edificio');
   if (data.tipoUnidadId !== undefined) {
     entity.tipoUnidad = await requireEntity(em, TipoUnidad, data.tipoUnidadId, 'TipoUnidad');

@@ -6,7 +6,8 @@ const fields = {
   capacidad: Joi.alternatives().try(
     enteroNoNegativoSchema,
     Joi.string().pattern(/^\s*$/).allow('')
-  ).allow(null).custom(value => value === 0 || typeof value === 'string' ? null : value)
+  ).allow(null).custom(value => value === 0 || typeof value === 'string' ? null : value),
+  esReservable: Joi.boolean().strict().allow(null),
 };
 
 export const createAreaComunSchema = createSchema(fields, Object.keys(unidadFields));

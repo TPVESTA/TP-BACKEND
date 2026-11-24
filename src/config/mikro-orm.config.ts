@@ -15,6 +15,8 @@ import { AdminEdificio } from '../entities/AdminEdificio';
 import { UsuarioRolPropiedad } from '../entities/UsuarioRolPropiedad';
 import { Incidencia } from '../entities/Incidencia';
 import { Reservacion } from '../entities/Reservacion';
+import { Reunion } from '../entities/Reunion';
+import { Notificacion } from '../entities/Notificacion';
 
 import { UsuarioRol } from '../entities/UsuarioRol';
 import { RolPermiso } from '../entities/RolPermiso';
@@ -29,7 +31,7 @@ const config: Options<MySqlDriver> = {
   charset: 'utf8mb4',
   debug: process.env.NODE_ENV !== 'production' && process.env.DB_DEBUG === 'true',
   allowGlobalContext: true,
-  entities: [UsuarioRol, User, Rol, RolPermiso, Administracion, Edificio, Localidad, TipoUnidad, Unidad, Propiedad, AreaComun, Empleado, AdminEdificio, UsuarioRolPropiedad, Incidencia, Reservacion],
+  entities: [UsuarioRol, User, Rol, RolPermiso, Administracion, Edificio, Localidad, TipoUnidad, Unidad, Propiedad, AreaComun, Empleado, AdminEdificio, UsuarioRolPropiedad, Incidencia, Reservacion, Reunion, Notificacion],
   discovery: {
     warnWhenNoEntities: false,
   },

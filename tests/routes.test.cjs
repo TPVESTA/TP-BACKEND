@@ -8,6 +8,7 @@ const authorization = require('../src/services/authorization/authorization.servi
 const routes = require('../src/routes').default;
 const { errorMiddleware, notFoundMiddleware } = require('../src/middlewares/error.middleware');
 const specs = [["administracion","Administracion","Administraciones","administraciones"],["edificio","Edificio","Edificios","edificios"],["localidad","Localidad","Localidades","localidades"],["tipo-unidad","TipoUnidad","TiposUnidad","tipos-unidad"],["unidad","Unidad","Unidades","unidades"],["propiedad","Propiedad","Propiedades","propiedades"],["area-comun","AreaComun","AreasComunes","areas-comunes"],["empleado","Empleado","Empleados","empleados"],["admin-edificio","AdminEdificio","AdminEdificios","admin-edificios"],["usuario-rol-propiedad","UsuarioRolPropiedad","UsuariosRolesPropiedad","usuarios-roles-propiedad"]];
+specs.push(['reunion', 'Reunion', 'Reuniones', 'reuniones']);
 // Reservas e incidencias tienen contrato propio (sin baja, autor de la sesión): se prueban en business-permissions.test.cjs.
 const unit = { nroUnidad: '2A', mtCuadrados: 65.25, descripcion: 'Unidad',
   edificioId: '1', tipoUnidadId: '2' };
@@ -23,6 +24,7 @@ const fixtures = {
   Empleado: { usuarioId: '1', administracionId: '2', rolId: '3', beginAt: '2026-01-01' },
   AdminEdificio: { administracionId: '1', edificioId: '2', beginAt: '2026-01-01' },
   UsuarioRolPropiedad: { usuarioId: '1', rolId: '2', propiedadId: '3', endAt: null },
+  Reunion: { asunto: 'Presupuesto', minuta: 'Revisar cotizaciones', fecha: '2028-02-29', hora: '19:30', edificioId: '1' },
 };
 const context = { usuarioId: 1, now: new Date('2026-10-01T12:00:00Z'), grants: [] };
 let server, base, token, oldSecret, originalLookup, originalContext;

@@ -39,7 +39,7 @@ function matches(row, where) {
     return actual instanceof Date && expected instanceof Date ? actual.getTime() === expected.getTime() : actual === expected;
   });
 }
-async function withEM(bookings, run) {
+async function withEM(bookings, run, areas = [area(200), area(201)]) {
   const original = manager.getORM;
   const queries = [], saved = [], transactions = [];
   let inTransaction = false;
@@ -52,7 +52,7 @@ async function withEM(bookings, run) {
     findOne: async (entity, where, options) => {
       assert.equal(inTransaction, true, 'La comprobación debe ejecutarse dentro de la transacción');
       queries.push({ entity, where, options });
-      const records = entity === Reservacion ? bookings : entity === AreaComun ? [area(200), area(201)] : [{ id: 1 }];
+      const records = entity === Reservacion ? bookings : entity === AreaComun ? areas : [{ id: 1 }];
       return records.find(row => matches(row, where)) ?? null;
     },
     persistAndFlush: async entity => { assert.equal(inTransaction, true); saved.push(entity); },
@@ -67,6 +67,21 @@ test('rechaza reservas de otros usuarios en el mismo día aunque tengan distinta
     await assert.rejects(service.createReservacion(input(), context), ConflictError);
     assert.equal(saved.length, 0);
   });
+});
+
+test('un área deshabilitada impide nuevas reservas y reprogramaciones y permite cancelar', async () => {
+  const disabledArea = Object.assign(area(200), { esReservable: false });
+  const existing = booking({ areaComun: disabledArea });
+  const movable = booking({ id: 501, areaComun: area(201) });
+  await withEM([existing, movable], async ({ saved }) => {
+    const fechaReservacion = new Date('2099-10-08T12:00:00-03:00');
+    await assert.rejects(service.createReservacion(input({ fechaReservacion }), context), /no admite reservas/);
+    await assert.rejects(service.updateReservacion(existing.id, { fechaReservacion }, context), /no admite reservas/);
+    await assert.rejects(service.updateReservacion(movable.id, { areaComunId: 200 }, context), /no admite reservas/);
+    assert.equal(saved.length, 0);
+    await service.updateReservacion(existing.id, { estado: E.CANCELADO }, context);
+    assert.equal(existing.estado, E.CANCELADO);
+  }, [disabledArea, area(201)]);
 });
 
 test('usa medianoche de Buenos Aires: incluye 03:00Z y excluye 03:00Z del día siguiente', async () => {
